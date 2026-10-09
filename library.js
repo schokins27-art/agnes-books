@@ -114,7 +114,8 @@ window.addEventListener('message',event=>{
   // Page-turn audio is played directly by the viewer during wheel/click.
   if(event.data?.type==='agnes:viewer-error')console.error('Book viewer:',event.data.message);
   if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
-  if(event.data?.type==='agnes:page-state'){viewerPage=event.data.state;layoutOutsideZones();}
+  if(event.data?.type==='agnes:page-state'){viewerPage=event.data.state;viewerTurning=false;layoutOutsideZones();}
+  if(event.data?.type==='agnes:turn-start'){viewerTurning=true;layoutOutsideZones();}
 
   if(event.data?.type==='agnes:return-to-shelf')closeBook();
 });
@@ -123,6 +124,7 @@ window.addEventListener('message',event=>{
 // Four hit regions on the parent document explicitly cover the empty margins.
 let viewerGeometry=null;
 let viewerPage='front';
+let viewerTurning=false;
 let viewerCoverRect=null;
 const outsideZones=[];
 for(let i=0;i<5;i++){
@@ -150,9 +152,9 @@ function layoutOutsideZones(){
   // back cover is on the LEFT. The empty half is exactly one page wide.
   // Never use getBoundingClientRect() on a transformed PageFlip cover.
   let coverBlank=[0,0,0,0];
-  if(viewerPage==='front'){
+  if(!viewerTurning && viewerPage==='front'){
     coverBlank=[x+safe,y+safe,Math.max(0,bookW/2-2),bookH];
-  }else if(viewerPage==='back'){
+  }else if(!viewerTurning && viewerPage==='back'){
     coverBlank=[x+safe+bookW/2+2,y+safe,Math.max(0,bookW/2-2),bookH];
   }
   const regions=[

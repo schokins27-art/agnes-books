@@ -96,6 +96,7 @@
       if (direction > 0 && i >= urls.length - 2) return;
       if (direction < 0 && i <= 0) return;
       busy = true;
+      window.parent.postMessage({type:'agnes:turn-start'},location.origin);
       playTurnSound();
       // Closing the book occurs when turning onto the back cover,
       // or turning backward from the first inner spread onto the front cover.
