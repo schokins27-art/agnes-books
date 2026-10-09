@@ -1,4 +1,4 @@
-/* Book of Tommy v3.3 — hard covers, HTML sheets, edge and wheel navigation. */
+/* Book of Tommy v3.4 — hard covers, HTML sheets, edge and wheel navigation. */
 (async () => {
   const host = document.getElementById('flipbook');
   const error = document.getElementById('error');
@@ -40,6 +40,41 @@
       mobileScrollSupport:false, showPageCorners:false, disableFlipByClick:true, startPage:0
     });
     flip.loadFromHTML(sheets);
+    // Quiet page-rustle sound generated locally: no audio downloads or external services.
+    // Audio starts only after the reader clicks or scrolls, as required by browsers.
+    let audioContext;
+    function pageSound(isCover) {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        audioContext ||= new AudioContextClass();
+        if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+        const sr = audioContext.sampleRate;
+        const duration = isCover ? 0.48 : 0.62;
+        const buffer = audioContext.createBuffer(1, Math.ceil(sr * duration), sr);
+        const samples = buffer.getChannelData(0);
+        // Brown-ish noise with two overlapping rustle swells and a soft tail.
+        let low = 0;
+        for (let i = 0; i < samples.length; i++) {
+          const t = i / sr;
+          low = (low + 0.085 * (Math.random() * 2 - 1)) / 1.085;
+          const swell1 = Math.exp(-Math.pow((t - duration * .25) / (duration * .17), 2));
+          const swell2 = Math.exp(-Math.pow((t - duration * .65) / (duration * .22), 2));
+          samples[i] = (low * .75 + (Math.random() * 2 - 1) * .16) * (swell1 * .55 + swell2 * .65);
+        }
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        const filter = audioContext.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = isCover ? 420 : 850;
+        filter.Q.value = .48;
+        const gain = audioContext.createGain();
+        gain.gain.value = isCover ? .14 : .11;
+        source.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
+        source.start();
+        source.onended = () => {source.disconnect(); filter.disconnect(); gain.disconnect();};
+      } catch (e) { console.warn('Page sound unavailable:', e); }
+    }
     let busy = false;
     let unlock;
     const turn = direction => {
@@ -48,6 +83,7 @@
       if (direction > 0 && i >= urls.length - 1) return;
       if (direction < 0 && i <= 0) return;
       busy = true;
+      pageSound(i === 0 || i >= urls.length - 2);
       clearTimeout(unlock);
       if (direction > 0) flip.flipNext('bottom');
       else flip.flipPrev('bottom');
