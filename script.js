@@ -1,46 +1,24 @@
-/* Universal book viewer. Set ?book=books/tommy/book.json in the embed URL. */
-(async function () {
-  const params = new URLSearchParams(location.search);
-  const configPath = params.get('book') || 'books/tommy/book.json';
-  const bookEl = document.getElementById('book');
-  const single = document.getElementById('singleImage');
-  const left = document.getElementById('leftImage');
-  const right = document.getElementById('rightImage');
-  const prev = document.getElementById('prev');
-  const next = document.getElementById('next');
-  const error = document.getElementById('error');
-  try {
-    const response = await fetch(configPath);
-    if (!response.ok) throw new Error('Не найден book.json (' + response.status + ')');
-    const config = await response.json();
-    const base = new URL('.', new URL(configPath, location.href));
-    const url = name => name ? new URL(name, base).href : '';
-    const pages = config.pages || [];
-    if (!config.cover || !pages.length) throw new Error('Укажите cover и pages в book.json');
-    const states = [{type:'cover',image:config.cover}];
-    for (let i=0;i<pages.length;i+=2) states.push({type:'spread',left:pages[i],right:pages[i+1]||null});
-    if (config.back) states.push({type:'back',image:config.back});
-    let current = config.startClosed === false ? 1 : 0;
-    current = Math.min(current, states.length-1);
-    function render(){
-      const state=states[current];
-      bookEl.classList.toggle('closed',state.type!=='spread');
-      if(state.type==='spread'){
-        left.src=url(state.left); left.style.visibility='visible';
-        if(state.right){right.src=url(state.right);right.style.visibility='visible'}
-        else {right.removeAttribute('src');right.style.visibility='hidden'}
-      }else{single.src=url(state.image);single.alt=state.type==='cover'?'Обложка':'Задняя обложка'}
-      prev.disabled=current===0;next.disabled=current===states.length-1;
-    }
-    prev.addEventListener('click',()=>{if(current>0){current--;render()}});
-    next.addEventListener('click',()=>{if(current<states.length-1){current++;render()}});
-    document.addEventListener('keydown',event=>{
-      if(event.key==='ArrowLeft')prev.click();
-      if(event.key==='ArrowRight')next.click();
-    });
-    let startX=null;
-    bookEl.addEventListener('touchstart',e=>{startX=e.touches[0]?.clientX??null},{passive:true});
-    bookEl.addEventListener('touchend',e=>{if(startX===null)return;const delta=e.changedTouches[0].clientX-startX;if(Math.abs(delta)>50)(delta<0?next:prev).click();startX=null},{passive:true});
-    render();
-  } catch(e){error.hidden=false;error.textContent='Не удалось загрузить книгу: '+e.message;console.error(e)}
+/* Reusable flipbook: configure books/tommy/book.json or ?book=books/eric/book.json */
+(async () => {
+ const $=id=>document.getElementById(id), book=$('book'), single=$('singleImage'),left=$('leftImage'),right=$('rightImage'),prev=$('prev'),next=$('next'),error=$('error');
+ try {
+  const path=new URLSearchParams(location.search).get('book')||'books/tommy/book.json';
+  const r=await fetch(path);if(!r.ok)throw Error('Не найден файл '+path);
+  const c=await r.json(),base=new URL('.',new URL(path,location.href)),src=p=>p?new URL(p,base).href:'';
+  const states=[{type:'cover',image:c.cover}];for(let i=0;i<c.pages.length;i+=2)states.push({type:'spread',left:c.pages[i],right:c.pages[i+1]||null});if(c.back)states.push({type:'back',image:c.back});
+  let index=c.startClosed===false?1:0,busy=false;
+  function draw(){const s=states[index];book.classList.toggle('closed',s.type!=='spread');if(s.type==='spread'){left.src=src(s.left);right.src=src(s.right);right.style.visibility=s.right?'visible':'hidden'}else{single.src=src(s.image)}prev.disabled=index===0;next.disabled=index===states.length-1;}
+  function turn(direction){if(busy||index+direction<0||index+direction>=states.length)return;busy=true;const old=states[index],upcoming=states[index+direction];
+   if(old.type!=='spread'||upcoming.type!=='spread'){book.classList.add('soft-turn');setTimeout(()=>{index+=direction;draw()},175);setTimeout(()=>{book.classList.remove('soft-turn');busy=false},430);return;}
+   const outgoing=direction>0?right:left, incoming=direction>0?left:right;
+   const clone=outgoing.cloneNode(true);clone.className='turning-page '+(direction>0?'forward':'backward');book.querySelector('.spread').appendChild(clone);
+   // update underlying spread halfway through animation
+   setTimeout(()=>{index+=direction;draw()},290);
+   setTimeout(()=>{clone.remove();busy=false},660);
+  }
+  prev.onclick=()=>turn(-1);next.onclick=()=>turn(1);
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')turn(1);if(e.key==='ArrowLeft')turn(-1)});
+  let start=null;book.addEventListener('pointerdown',e=>start=e.clientX);book.addEventListener('pointerup',e=>{if(start!==null&&Math.abs(e.clientX-start)>55)turn(e.clientX<start?1:-1);start=null});
+  draw();
+ }catch(e){error.hidden=false;error.textContent=e.message;console.error(e)}
 })();
