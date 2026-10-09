@@ -2,16 +2,32 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important}
 body{font-family:Georgia,serif}
 [hidden]{display:none!important}
-#library{width:100%;height:100%;background:transparent;position:relative;overflow:hidden;perspective:1200px}
-#shelf{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:transparent;transform-origin:50% 60%;transition:opacity 650ms ease,transform 850ms cubic-bezier(.2,.7,.2,1),filter 650ms ease;will-change:opacity,transform}
-.spine{border:0;background:transparent;padding:0;cursor:pointer;display:block;width:min(94vw,calc(90vh * 2.5));max-height:90vh;line-height:0;transition:filter .2s ease,transform .2s ease;outline-offset:4px}
-.spine img{width:100%;height:auto;max-height:90vh;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
-.spine:hover{filter:brightness(1.12);transform:translateY(-3px)}
-.spine:focus-visible{outline:2px solid #d6b87e;border-radius:5px}
-#opened{position:absolute;inset:0;background:transparent;opacity:0;transform:translateY(36px) scale(.83) rotateX(-8deg);transform-origin:50% 62%;pointer-events:none;transition:opacity 650ms ease,transform 850ms cubic-bezier(.2,.7,.2,1);will-change:opacity,transform}
+#library{position:relative;width:100%;height:100%;overflow:hidden;perspective:1300px;background:transparent}
+#shelf{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:auto}
+.spine{border:0;background:transparent;padding:0;cursor:pointer;display:block;width:min(94vw,calc(90vh * 2.5));max-height:90vh;line-height:0;transition:filter .2s,transform .2s}
+.spine img{display:block;width:100%;height:auto;max-height:90vh;object-fit:contain;user-select:none;-webkit-user-drag:none}
+.spine:hover{filter:brightness(1.1);transform:translateY(-3px)}
+.spine:focus-visible{outline:2px solid #d6b87e;outline-offset:4px}
+#opened{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity 180ms ease;background:transparent}
 #book-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
-#library.is-opening #shelf,#library.is-open #shelf{opacity:0;transform:translateY(-42px) scale(1.18) rotateX(7deg);filter:blur(3px);pointer-events:none}
-#library.is-opening #opened,#library.is-open #opened{opacity:1;transform:translateY(0) scale(1) rotateX(0);pointer-events:auto}
-#library.is-closing #shelf{opacity:1;transform:translateY(0) scale(1) rotateX(0);filter:none;pointer-events:none}
-#library.is-closing #opened{opacity:0;transform:translateY(36px) scale(.83) rotateX(-8deg);pointer-events:none}
-@media(prefers-reduced-motion:reduce){#shelf,#opened{transition:none!important}.spine{transition:none!important}}
+#library.is-open #opened{opacity:1;pointer-events:auto}
+#library.is-open #shelf{display:none}
+/* During transition a real cover image rotates from the horizontal shelf book toward the viewer. */
+#flight{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:5;perspective:1100px}
+#flying-book{position:relative;width:min(34vw,calc(66vh * .706));aspect-ratio:720/1020;transform-style:preserve-3d;filter:drop-shadow(0 14px 18px rgba(0,0,0,.4));opacity:0}
+#flying-book img{display:block;width:100%;height:100%;object-fit:fill;backface-visibility:hidden}
+#flying-book::after{content:'';position:absolute;top:0;bottom:0;right:-9px;width:9px;background:linear-gradient(90deg,#e5d5b2,#806c51);transform:rotateY(90deg);transform-origin:left}
+#flight.is-lifting #flying-book{animation:lift-book 1250ms cubic-bezier(.2,.55,.2,1) both}
+#flight.is-returning #flying-book{animation:lift-book 1250ms cubic-bezier(.2,.55,.2,1) reverse both}
+/* Starts nearly flat and low, rises, tilts upright and presents the original front cover. */
+@keyframes lift-book{
+  0%{opacity:0;transform:translateY(95px) translateZ(-140px) rotateX(77deg) rotateZ(-90deg) scale(.75)}
+  12%{opacity:1;transform:translateY(75px) translateZ(-100px) rotateX(72deg) rotateZ(-77deg) scale(.8)}
+  43%{opacity:1;transform:translateY(-36px) translateZ(25px) rotateX(42deg) rotateZ(-42deg) scale(.9)}
+  78%{opacity:1;transform:translateY(-8px) translateZ(35px) rotateX(9deg) rotateZ(-8deg) scale(1)}
+  94%{opacity:1;transform:translateY(0) translateZ(0) rotateX(0) rotateZ(0) scale(1)}
+  100%{opacity:0;transform:translateY(0) translateZ(0) rotateX(0) rotateZ(0) scale(1)}
+}
+#library.is-transitioning #shelf{pointer-events:none}
+#library.is-transitioning #opened{pointer-events:none}
+@media(prefers-reduced-motion:reduce){#flight{display:none!important}#opened{transition:none!important}.spine{transition:none!important}}
