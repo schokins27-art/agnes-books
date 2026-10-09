@@ -1,4 +1,4 @@
-/* Book of Tommy v3.5 — hard covers, HTML sheets, edge and wheel navigation. */
+/* Book of Tommy v3.6 — hard covers, HTML sheets, edge and wheel navigation. */
 (async () => {
   const host = document.getElementById('flipbook');
   const error = document.getElementById('error');
@@ -66,8 +66,10 @@
       busy = true;
       // Closing the book occurs when turning onto the back cover,
       // or turning backward from the first inner spread onto the front cover.
-      const isClosing = (direction > 0 && i >= urls.length - 2) ||
-                        (direction < 0 && i > 0 && i <= 1);
+      // In two-page mode the last open spread starts at N-3;
+      // flipping from it closes the back cover at N-1.
+      const isClosing = (direction > 0 && i >= urls.length - 3) ||
+                        (direction < 0 && i > 0 && i <= 2);
       playSound(isClosing);
       clearTimeout(unlock);
       if (direction > 0) flip.flipNext('bottom');
