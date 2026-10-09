@@ -8,7 +8,7 @@ body{font-family:Georgia,serif}
 .spine img{display:block;width:100%;height:auto;max-height:90vh;object-fit:contain;user-select:none;-webkit-user-drag:none}
 .spine:hover{filter:brightness(1.1);transform:translateY(-3px)}
 .spine:focus-visible{outline:2px solid #d6b87e;outline-offset:4px}
-#opened{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity 180ms ease;background:transparent}
+#opened{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity 100ms ease;background:transparent}
 #book-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
 #library.is-open #opened{opacity:1;pointer-events:auto}
 #library.is-open #shelf{display:none}
@@ -17,16 +17,14 @@ body{font-family:Georgia,serif}
 #flying-book{position:relative;width:min(34vw,calc(66vh * .706));aspect-ratio:720/1020;transform-style:preserve-3d;filter:drop-shadow(0 14px 18px rgba(0,0,0,.4));opacity:0}
 #flying-book img{display:block;width:100%;height:100%;object-fit:fill;backface-visibility:hidden}
 #flying-book::after{content:'';position:absolute;top:0;bottom:0;right:-9px;width:9px;background:linear-gradient(90deg,#e5d5b2,#806c51);transform:rotateY(90deg);transform-origin:left}
-#flight.is-lifting #flying-book{animation:lift-book 1250ms cubic-bezier(.2,.55,.2,1) both}
-#flight.is-returning #flying-book{animation:lift-book 1250ms cubic-bezier(.2,.55,.2,1) reverse both}
+#flight.is-lifting #flying-book{animation:lift-book 620ms cubic-bezier(.2,.55,.2,1) both}
+#flight.is-returning #flying-book{animation:lift-book 620ms cubic-bezier(.2,.55,.2,1) reverse both}
 /* Starts nearly flat and low, rises, tilts upright and presents the original front cover. */
 @keyframes lift-book{
-  0%{opacity:0;transform:translateY(95px) translateZ(-140px) rotateX(77deg) rotateZ(-90deg) scale(.75)}
-  12%{opacity:1;transform:translateY(75px) translateZ(-100px) rotateX(72deg) rotateZ(-77deg) scale(.8)}
-  43%{opacity:1;transform:translateY(-36px) translateZ(25px) rotateX(42deg) rotateZ(-42deg) scale(.9)}
-  78%{opacity:1;transform:translateY(-8px) translateZ(35px) rotateX(9deg) rotateZ(-8deg) scale(1)}
-  94%{opacity:1;transform:translateY(0) translateZ(0) rotateX(0) rotateZ(0) scale(1)}
-  100%{opacity:0;transform:translateY(0) translateZ(0) rotateX(0) rotateZ(0) scale(1)}
+  0%{opacity:0;transform:translateY(58px) translateZ(-100px) rotateX(74deg) rotateZ(-90deg) scale(.77)}
+  12%{opacity:1;transform:translateY(44px) translateZ(-80px) rotateX(67deg) rotateZ(-72deg) scale(.81)}
+  65%{opacity:1;transform:translateY(-10px) translateZ(20px) rotateX(16deg) rotateZ(-12deg) scale(.98)}
+  100%{opacity:1;transform:translateY(0) translateZ(0) rotateX(0) rotateZ(0) scale(1)}
 }
 #library.is-transitioning #shelf{pointer-events:none}
 #library.is-transitioning #opened{pointer-events:none}

@@ -8,7 +8,7 @@ const flight=document.getElementById('flight');
 const flyingCover=document.getElementById('flying-cover');
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 let active=null,transitioning=false,animationTimer=null;
-const motionTime=()=>reducedMotion.matches?0:1250;
+const motionTime=()=>reducedMotion.matches?0:620;
 function animateFlight(direction,book,done){
   clearTimeout(animationTimer);
   flyingCover.src=book.cover;
@@ -22,6 +22,7 @@ function openBook(book){
   if(active||transitioning)return;
   transitioning=true;active=book;
   library.classList.add('is-transitioning');
+  opened.hidden=false;
   frame.onload=()=>{
     frame.onload=null;
     animateFlight('out',book,()=>{
@@ -42,6 +43,7 @@ function closeBook(){
   shelf.hidden=false;
   animateFlight('back',book,()=>{
     frame.src='about:blank';
+    opened.hidden=true;
     active=null;
     transitioning=false;
     library.classList.remove('is-transitioning');
