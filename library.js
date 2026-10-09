@@ -47,11 +47,19 @@ async function openBook(book){
   // Immediately remove the shelf image and start the pickup animation.
   shelf.hidden=true;
   opened.hidden=false; // The iframe must be unhidden before revealing the viewer.
-  const ready=new Promise(resolve=>{readyResolve=resolve;});
+  let didResolve=false;
+  const ready=new Promise(resolve=>{
+    readyResolve=()=>{if(!didResolve){didResolve=true;resolve();}};
+  });
   frame.src='viewer.html?book='+encodeURIComponent(book.config);
+  frame.onerror=()=>console.error('Не удалось загрузить просмотрщик книги');
   // Flight and loading happen at the same time, not one after another.
   const animation=fly('out',book);
-  await Promise.all([animation,ready]);
+  // Never leave the user stuck behind the animated cover if the embedded
+  // viewer is slow or fails to send its readiness event.
+  await animation;
+  await Promise.race([ready,delay(400)]);
+  readyResolve=null;
   library.classList.add('is-open');
   clearFlight();
   transitioning=false;
@@ -80,6 +88,7 @@ window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
   if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
   if(event.data?.type==='agnes:page-turn')playPaperSound();
+  if(event.data?.type==='agnes:viewer-error')console.error('Book viewer:',event.data.message);
   if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
   if(event.data?.type==='agnes:return-to-shelf')closeBook();
 });

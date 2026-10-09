@@ -111,5 +111,6 @@
   } catch(e) {
     if (error) {error.hidden = false;error.textContent = e.message;}
     console.error('Book of Tommy:',e);
+    window.parent.postMessage({type:'agnes:viewer-error',message:String(e.message||e)},location.origin);
   }
 })();
