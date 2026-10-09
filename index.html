@@ -1,11 +1,1 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Interactive book</title><link rel="stylesheet" href="style.css"></head><body>
-<main id="viewer" aria-label="Интерактивная книга">
-  <div id="book" class="book closed" aria-live="polite">
-    <div class="sheet single" id="single"><img id="singleImage" alt="Обложка книги" draggable="false"></div>
-    <div class="spread" id="spread"><div class="sheet left"><img id="leftImage" alt="Левая страница" draggable="false"></div><div class="sheet right"><img id="rightImage" alt="Правая страница" draggable="false"></div></div>
-  </div>
-  <button id="prev" class="nav prev" type="button" aria-label="Предыдущая страница">‹</button>
-  <button id="next" class="nav next" type="button" aria-label="Следующая страница">›</button>
-  <div id="error" role="alert" hidden></div>
-</main>
-<script src="script.js"></script></body></html>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Book of Tommy</title><link rel="stylesheet" href="style.css"></head><body><main id="viewer"><div id="flipbook" aria-label="Книга"></div><button id="prev" class="nav prev" aria-label="Назад">‹</button><button id="next" class="nav next" aria-label="Вперёд">›</button><div id="error" role="alert" hidden></div></main><script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script><script src="script.js"></script></body></html>
