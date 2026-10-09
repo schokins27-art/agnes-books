@@ -1,4 +1,4 @@
-/* Book of Tommy v3.6 — hard covers, HTML sheets, edge and wheel navigation. */
+/* Book of Tommy v3.7 — hard covers, HTML sheets, edge and wheel navigation. */
 (async () => {
   const host = document.getElementById('flipbook');
   const error = document.getElementById('error');
@@ -40,9 +40,9 @@
       mobileScrollSupport:false, showPageCorners:false, disableFlipByClick:true, startPage:0
     });
     flip.loadFromHTML(sheets);
-    // Real recordings: paper for opening and ordinary pages; closing only for covers closing.
-    const paperAudio = new Audio('sounds/page-turn.mp3');
-    const closingAudio = new Audio('sounds/book-closing.mp3');
+    // Real recordings: cover transitions use the closing sound; inner pages use paper.
+    const paperAudio = new Audio('sounds/page-turn.mp3?v=37');
+    const closingAudio = new Audio('sounds/book-closing.mp3?v=37');
     paperAudio.preload = 'auto';
     closingAudio.preload = 'auto';
     paperAudio.volume = 0.8;
@@ -68,9 +68,9 @@
       // or turning backward from the first inner spread onto the front cover.
       // In two-page mode the last open spread starts at N-3;
       // flipping from it closes the back cover at N-1.
-      const isClosing = (direction > 0 && i >= urls.length - 3) ||
-                        (direction < 0 && i > 0 && i <= 2);
-      playSound(isClosing);
+      const coverTransition = (direction > 0 && (i === 0 || i >= urls.length - 3)) ||
+                              (direction < 0 && (i <= 2 || i >= urls.length - 1));
+      playSound(coverTransition);
       clearTimeout(unlock);
       if (direction > 0) flip.flipNext('bottom');
       else flip.flipPrev('bottom');
