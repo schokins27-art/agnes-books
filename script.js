@@ -1,26 +1,55 @@
-/* Real page flipping with StPageFlip. Each image is ONE page, never a full spread. */
-(async()=>{
- const $=id=>document.getElementById(id), el=$('flipbook'),prev=$('prev'),next=$('next'),error=$('error');
- try{
-  if(!window.St || !St.PageFlip)throw Error('Не загрузилась библиотека перелистывания. Проверь подключение к интернету.');
-  const path=new URLSearchParams(location.search).get('book')||'books/tommy/book.json';
-  const res=await fetch(path,{cache:'no-cache'});if(!res.ok)throw Error('Не найден '+path);
-  const cfg=await res.json();const base=new URL('.',new URL(path,location.href));
-  const files=[cfg.cover,...cfg.pages,cfg.back].filter(Boolean);
-  if(files.length%2!==0)throw Error('Для книги с двумя обложками нужно чётное число страниц.');
-  const preload=files.map(f=>{const img=new Image();img.src=new URL(f,base).href;return img.decode().catch(()=>{});});
-  await Promise.all(preload);
-  files.forEach((f,i)=>{const page=document.createElement('div');page.className='page'+((i===0||i===files.length-1)?' hard':'');
-   if(i===0||i===files.length-1)page.dataset.density='hard';
-   const img=document.createElement('img');img.src=new URL(f,base).href;img.alt=i===0?'Передняя обложка':i===files.length-1?'Задняя обложка':'Страница '+i;img.draggable=false;
-   page.append(img);el.append(page);
-  });
-  const flip=new St.PageFlip(el,{width:900,height:1275,size:'stretch',minWidth:230,maxWidth:900,minHeight:325,maxHeight:1275,showCover:true,drawShadow:true,maxShadowOpacity:0.45,flippingTime:1100,usePortrait:false,startPage:0,autoSize:true,mobileScrollSupport:false,clickEventForward:false,swipeDistance:35,showPageCorners:false,disableFlipByClick:true});
-  flip.loadFromHTML(el.querySelectorAll('.page'));
-  const sync=()=>{const i=flip.getCurrentPageIndex();prev.disabled=i===0;next.disabled=i===files.length-1};
-  flip.on('flip',sync);flip.on('init',sync);sync();
-  prev.onclick=()=>flip.flipPrev('bottom');next.onclick=()=>flip.flipNext('bottom');
-  el.addEventListener('click',e=>{if(e.target.closest('.page') && flip.getCurrentPageIndex()===0)flip.flipNext('bottom')});
-  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')flip.flipNext('bottom');if(e.key==='ArrowLeft')flip.flipPrev('bottom')});
- }catch(e){error.hidden=false;error.textContent=e.message;console.error(e)}
+/* Image-based StPageFlip: do not construct HTML pages manually. */
+(async () => {
+  const el = document.getElementById('flipbook');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const error = document.getElementById('error');
+  try {
+    if (!el || !prev || !next || !error) throw new Error('Не найдены элементы интерфейса книги.');
+    if (!window.St?.PageFlip) throw new Error('Не загрузилась библиотека перелистывания.');
+    const path = new URLSearchParams(location.search).get('book') || 'books/tommy/book.json';
+    const response = await fetch(path, {cache:'no-cache'});
+    if (!response.ok) throw new Error('Не найден файл книги: ' + path);
+    const cfg = await response.json();
+    const base = new URL('.', new URL(path, location.href));
+    const files = [cfg.cover, ...(cfg.pages || []), cfg.back].filter(Boolean);
+    if (files.length < 4 || files.length % 2) throw new Error('Нужно чётное число изображений, включая обложки.');
+    const urls = files.map(file => new URL(file, base).href);
+    await Promise.all(urls.map(src => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Не загрузилась страница: ' + src));
+      img.src = src;
+    })));
+    const flip = new St.PageFlip(el, {
+      width: 720, height: 1020, size: 'stretch',
+      minWidth: 240, maxWidth: 720, minHeight: 340, maxHeight: 1020,
+      showCover: true, drawShadow: true, maxShadowOpacity: 0.5,
+      flippingTime: 1050, usePortrait: false, startPage: 0,
+      autoSize: true, mobileScrollSupport: false,
+      showPageCorners: false, disableFlipByClick: true
+    });
+    // Crucial: image renderer creates its own canvas and event target.
+    flip.loadFromImages(urls);
+    const sync = () => {
+      const index = flip.getCurrentPageIndex();
+      prev.disabled = index <= 0;
+      next.disabled = index >= files.length - 1;
+    };
+    flip.on('flip', sync);
+    flip.on('init', sync);
+    sync();
+    prev.addEventListener('click', () => flip.flipPrev('bottom'));
+    next.addEventListener('click', () => flip.flipNext('bottom'));
+    el.addEventListener('click', () => {
+      if (flip.getCurrentPageIndex() === 0) flip.flipNext('bottom');
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'ArrowRight') flip.flipNext('bottom');
+      if (event.key === 'ArrowLeft') flip.flipPrev('bottom');
+    });
+  } catch (e) {
+    if (error) {error.hidden = false; error.textContent = e.message;}
+    console.error('Book of Tommy:', e);
+  }
 })();
