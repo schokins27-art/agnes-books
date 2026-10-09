@@ -44,11 +44,13 @@
     flip.loadFromHTML(sheets);
     function reportPageState(){
       const i=flip.getCurrentPageIndex();
-      const state=i===0?'front':i>=urls.length-2?'back':'open';
+      const state=i===0?'front':i>=urls.length-1?'back':'open';
       window.parent.postMessage({type:'agnes:page-state',state},location.origin);
     }
-    flip.on('flip',reportPageState);
-
+    flip.on('flip',()=>{
+      reportPageState();
+      window.parent.postMessage({type:'agnes:page-turn'},location.origin);
+    });
     reportPageState();
     // Clicking transparent space outside the VISIBLE pages puts the book away.
     // Closed front cover occupies the right half; closed rear cover the left.
@@ -60,12 +62,9 @@
       // PageFlip uses a full-spread element even when only one cover is
       // visible. Never trust the cover element's transformed bounding box:
       // on some browsers it spans both halves and blocks the blank side.
-      if(page===0){
-        if(x>=r.left&&x<mid-5&&y>=r.top&&y<=r.bottom)return true;
-      }
-      if(page>=urls.length-2){
-        if(x>mid+5&&x<=r.right&&y>=r.top&&y<=r.bottom)return true;
-      }
+
+      if(page===0 && x>=r.left && x<mid-4 && y>=r.top && y<=r.bottom)return true;
+      if(page>=urls.length-1 && x>mid+4 && x<=r.right && y>=r.top && y<=r.bottom)return true;
       return x<r.left||x>r.right||y<r.top||y>r.bottom;
     }
     document.addEventListener('pointerdown',event=>{
@@ -78,9 +77,6 @@
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     // Play in the parent frame: the original shelf click activated audio there.
-    function playTurn(){
-      window.parent.postMessage({type:'agnes:page-turn'},location.origin);
-    }
     let busy = false;
     let unlock;
     const turn = direction => {
@@ -95,7 +91,6 @@
       // flipping from it closes the back cover at N-1.
       const coverTransition = (direction > 0 && (i === 0 || i >= urls.length - 3)) ||
                               (direction < 0 && (i <= 2 || i >= urls.length - 1));
-      playTurn();
       clearTimeout(unlock);
       if (direction > 0) flip.flipNext('bottom');
       else flip.flipPrev('bottom');

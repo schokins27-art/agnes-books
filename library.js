@@ -12,7 +12,7 @@ let active=null,transitioning=false,readyResolve=null;
 const DURATION=690;
 // The former cover-open/close recording now belongs to shelf pickup/put-away.
 const shelfSound=new Audio('sounds/book-closing.mp3?v=30');
-const paperSound=new Audio('sounds/page-turn.mp3?v=52');
+const paperSound=new Audio('sounds/page-turn.mp3?v=71');
 paperSound.preload='auto';paperSound.volume=.8;
 shelfSound.preload='auto';shelfSound.volume=0.7;
 function playShelfSound(){
@@ -20,16 +20,31 @@ function playShelfSound(){
     const result=shelfSound.play();result?.catch(()=>{});
   } catch(e) {console.warn('Shelf sound unavailable',e);}
 }
-// Keep a single page-turn audio element unlocked by the initial user gesture.
+const AudioContextType=window.AudioContext||window.webkitAudioContext;
+let pageAudioContext=null,pageAudioBuffer=null;
+const pageSoundBytes=fetch('sounds/page-turn.mp3?v=71',{cache:'no-store'})
+  .then(r=>{if(!r.ok)throw Error('Page audio HTTP '+r.status);return r.arrayBuffer();})
+  .catch(e=>{console.error('Page audio fetch:',e);return null;});
 function unlockPaperSound(){
-  paperSound.muted=true;
-  const p=paperSound.play();
-  p?.then(()=>{paperSound.pause();paperSound.currentTime=0;paperSound.muted=false;})
-    .catch(e=>{paperSound.muted=false;console.warn('Paper unlock:',e);});
+  if(!AudioContextType)return;
+  if(!pageAudioContext)pageAudioContext=new AudioContextType();
+  // This runs directly inside the shelf button click, while user activation is live.
+  pageAudioContext.resume().catch(e=>console.warn('Audio resume:',e));
+  pageSoundBytes.then(bytes=>bytes&&pageAudioContext.decodeAudioData(bytes))
+    .then(buffer=>{if(buffer)pageAudioBuffer=buffer;})
+    .catch(e=>console.error('Page audio decode:',e));
 }
 function playPaperSound(){
-  paperSound.pause();paperSound.currentTime=0;paperSound.muted=false;
-  paperSound.play().catch(e=>console.warn('Page turn playback:',e));
+  if(pageAudioContext&&pageAudioBuffer){
+    if(pageAudioContext.state==='suspended')pageAudioContext.resume().catch(()=>{});
+    const node=pageAudioContext.createBufferSource();
+    const gain=pageAudioContext.createGain();gain.gain.value=1;
+    node.buffer=pageAudioBuffer;node.connect(gain);gain.connect(pageAudioContext.destination);
+    node.start(0);
+  }else{
+    paperSound.pause();paperSound.currentTime=0;
+    paperSound.play().catch(e=>console.warn('Page audio fallback:',e));
+  }
 }
 
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -51,7 +66,7 @@ async function fly(direction,book){
 function clearFlight(){flight.hidden=true;flight.className='';}
 async function openBook(book){
   if(active||transitioning)return;
-  active=book;transitioning=true;viewerGeometry=null;viewerPage='front';
+  active=book;transitioning=true;viewerGeometry=null;viewerPage='front';viewerCoverRect=null;
   unlockPaperSound();
   playShelfSound();
   // Immediately remove the shelf image and start the pickup animation.
@@ -101,6 +116,7 @@ window.addEventListener('message',event=>{
   if(event.data?.type==='agnes:viewer-error')console.error('Book viewer:',event.data.message);
   if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
   if(event.data?.type==='agnes:page-state'){viewerPage=event.data.state;layoutOutsideZones();}
+
   if(event.data?.type==='agnes:return-to-shelf')closeBook();
 });
 // The embedded viewer is an iframe. Transparent pixels in an iframe still
@@ -108,6 +124,7 @@ window.addEventListener('message',event=>{
 // Four hit regions on the parent document explicitly cover the empty margins.
 let viewerGeometry=null;
 let viewerPage='front';
+let viewerCoverRect=null;
 const outsideZones=[];
 for(let i=0;i<5;i++){
   const zone=document.createElement('div');
@@ -130,16 +147,21 @@ function layoutOutsideZones(){
   const safe=4;
   const x=(width-bookW)/2-safe,y=(height-bookH)/2-safe;
   const safeBookW=bookW+2*safe,safeBookH=bookH+2*safe;
+  // Fixed two-page PageFlip spread: front cover is on the RIGHT,
+  // back cover is on the LEFT. The empty half is exactly one page wide.
+  // Never use getBoundingClientRect() on a transformed PageFlip cover.
+  let coverBlank=[0,0,0,0];
+  if(viewerPage==='front'){
+    coverBlank=[x+safe,y+safe,Math.max(0,bookW/2-2),bookH];
+  }else if(viewerPage==='back'){
+    coverBlank=[x+safe+bookW/2+2,y+safe,Math.max(0,bookW/2-2),bookH];
+  }
   const regions=[
     [0,0,width,Math.max(0,y)],
     [0,y,Math.max(0,x),Math.max(0,safeBookH)],
     [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
     [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)],
-    viewerPage==='front'
-      ? [x+safe,y,bookW/2-6,bookH]
-      : viewerPage==='back'
-        ? [x+safe+bookW/2+6,y,bookW/2-6,bookH]
-        : [0,0,0,0]
+    coverBlank
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];
