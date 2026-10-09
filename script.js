@@ -44,7 +44,7 @@
     flip.loadFromHTML(sheets);
     function reportPageState(){
       const i=flip.getCurrentPageIndex();
-      const state=i===0?'front':i>=urls.length-1?'back':'open';
+      const state=i===0?'front':i>=urls.length-2?'back':'open';
       window.parent.postMessage({type:'agnes:page-state',state},location.origin);
     }
     flip.on('flip',()=>{
@@ -64,7 +64,7 @@
       // on some browsers it spans both halves and blocks the blank side.
 
       if(page===0 && x>=r.left && x<mid-4 && y>=r.top && y<=r.bottom)return true;
-      if(page>=urls.length-1 && x>mid+4 && x<=r.right && y>=r.top && y<=r.bottom)return true;
+      if(page>=urls.length-2 && x>mid+4 && x<=r.right && y>=r.top && y<=r.bottom)return true;
       return x<r.left||x>r.right||y<r.top||y>r.bottom;
     }
     document.addEventListener('pointerdown',event=>{
@@ -77,14 +77,26 @@
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     // Play in the parent frame: the original shelf click activated audio there.
+    // Play on the initiating user gesture (not on an asynchronous iframe message).
+    // Each flip gets a fresh Audio instance, avoiding the previous pause/reset race.
+    const turnSoundUrl=new URL('sounds/page-turn.mp3?v=72',location.href).href;
+    const turnSoundPreload=new Audio(turnSoundUrl);
+    turnSoundPreload.preload='auto';
+    turnSoundPreload.load();
+    function playTurnSound(){
+      const sound=new Audio(turnSoundUrl);
+      sound.volume=1;
+      sound.play().catch(err=>console.warn('Page-turn audio:',err));
+    }
     let busy = false;
     let unlock;
     const turn = direction => {
       if (busy) return;
       const i = flip.getCurrentPageIndex();
-      if (direction > 0 && i >= urls.length - 1) return;
+      if (direction > 0 && i >= urls.length - 2) return;
       if (direction < 0 && i <= 0) return;
       busy = true;
+      playTurnSound();
       // Closing the book occurs when turning onto the back cover,
       // or turning backward from the first inner spread onto the front cover.
       // In two-page mode the last open spread starts at N-3;
@@ -94,7 +106,7 @@
       clearTimeout(unlock);
       if (direction > 0) flip.flipNext('bottom');
       else flip.flipPrev('bottom');
-      unlock = setTimeout(() => {busy = false;}, 1150);
+      unlock = setTimeout(() => {busy = false;reportPageState();}, 1150);
     };
     host.addEventListener('click', event => {
       const rect = host.getBoundingClientRect();

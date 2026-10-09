@@ -67,7 +67,6 @@ function clearFlight(){flight.hidden=true;flight.className='';}
 async function openBook(book){
   if(active||transitioning)return;
   active=book;transitioning=true;viewerGeometry=null;viewerPage='front';viewerCoverRect=null;
-  unlockPaperSound();
   playShelfSound();
   // Immediately remove the shelf image and start the pickup animation.
   shelf.hidden=true;
@@ -112,7 +111,7 @@ for(const book of BOOKS){
 window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
   if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
-  if(event.data?.type==='agnes:page-turn')playPaperSound();
+  // Page-turn audio is played directly by the viewer during wheel/click.
   if(event.data?.type==='agnes:viewer-error')console.error('Book viewer:',event.data.message);
   if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
   if(event.data?.type==='agnes:page-state'){viewerPage=event.data.state;layoutOutsideZones();}
