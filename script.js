@@ -1,81 +1,81 @@
-/* Book of Tommy — edge and wheel navigation, stable spread sizing. */
+/* Book of Tommy v3.3 — hard covers, HTML sheets, edge and wheel navigation. */
 (async () => {
   const host = document.getElementById('flipbook');
   const error = document.getElementById('error');
-  let flip;
   try {
     if (!host || !window.St?.PageFlip) throw new Error('Не удалось загрузить механизм перелистывания.');
     const path = new URLSearchParams(location.search).get('book') || 'books/tommy/book.json';
-    const res = await fetch(path, { cache: 'no-cache' });
-    if (!res.ok) throw new Error('Не найден файл книги: ' + path);
-    const cfg = await res.json();
+    const response = await fetch(path, {cache:'no-store'});
+    if (!response.ok) throw new Error('Не найден файл книги: ' + path);
+    const cfg = await response.json();
     const base = new URL('.', new URL(path, location.href));
     const names = [cfg.cover, ...(cfg.pages || []), cfg.back].filter(Boolean);
-    if (names.length < 4 || names.length % 2) throw new Error('Нужно чётное количество изображений, включая обложки.');
+    if (names.length < 4 || names.length % 2 !== 0) throw new Error('Нужно чётное количество изображений, включая обложки.');
     const urls = names.map(name => new URL(name, base).href);
-    await Promise.all(urls.map(src => new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = resolve;
-      img.onerror = () => reject(new Error('Не загрузилась страница: ' + src));
-      img.src = src;
+    await Promise.all(urls.map(src => new Promise((resolve,reject) => {
+      const image = new Image();
+      image.onload = resolve;
+      image.onerror = () => reject(new Error('Не загрузилась страница: ' + src));
+      image.src = src;
     })));
-
-    // Reserve exactly two page widths, even while one cover is visible.
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const pageWidth = Math.max(100, Math.floor(Math.min(vw * 0.46, vh * 0.86 * 720 / 1020)));
-    const pageHeight = Math.round(pageWidth * 1020 / 720);
-    host.style.width = `${pageWidth * 2}px`;
-    host.style.height = `${pageHeight}px`;
-    flip = new St.PageFlip(host, {
-      width: pageWidth, height: pageHeight, size: 'fixed',
-      showCover: true, usePortrait: false, autoSize: false,
-      drawShadow: true, maxShadowOpacity: 0.38, flippingTime: 1050,
-      mobileScrollSupport: false, showPageCorners: false,
-      disableFlipByClick: true, startPage: 0
+    const w = Math.max(100, Math.floor(Math.min(innerWidth * .46, innerHeight * .86 * 720 / 1020)));
+    const h = Math.round(w * 1020 / 720);
+    host.style.width = `${w * 2}px`;
+    host.style.height = `${h}px`;
+    const sheets = urls.map((url,index) => {
+      const sheet = document.createElement('div');
+      sheet.className = 'book-sheet' + (index === 0 || index === urls.length-1 ? ' book-cover' : '');
+      if (index === 0 || index === urls.length-1) sheet.dataset.density = 'hard';
+      const picture = document.createElement('img');
+      picture.src = url;
+      picture.alt = index === 0 ? 'Передняя обложка' : index === urls.length-1 ? 'Задняя обложка' : `Страница ${index}`;
+      picture.draggable = false;
+      sheet.append(picture);
+      host.append(sheet);
+      return sheet;
     });
-    flip.loadFromImages(urls);
-
+    const flip = new St.PageFlip(host, {
+      width:w, height:h, size:'fixed', showCover:true, usePortrait:false, autoSize:false,
+      drawShadow:true, maxShadowOpacity:.34, flippingTime:1050,
+      mobileScrollSupport:false, showPageCorners:false, disableFlipByClick:true, startPage:0
+    });
+    flip.loadFromHTML(sheets);
     let busy = false;
-    let unlock = 0;
+    let unlock;
     const turn = direction => {
       if (busy) return;
       const i = flip.getCurrentPageIndex();
-      if (direction > 0 && i >= names.length - 1) return;
+      if (direction > 0 && i >= urls.length - 1) return;
       if (direction < 0 && i <= 0) return;
       busy = true;
       clearTimeout(unlock);
-      // The library's flip event fires at the START of the turn, not the end.
-      unlock = setTimeout(() => { busy = false; }, 1120);
       if (direction > 0) flip.flipNext('bottom');
       else flip.flipPrev('bottom');
+      unlock = setTimeout(() => {busy = false;}, 1150);
     };
-
-    // Clicking the right/left outer edge turns one sheet. Covers respond too.
     host.addEventListener('click', event => {
       const rect = host.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width;
-      if (x >= 0.70) turn(1);
-      else if (x <= 0.30) turn(-1);
+      const x = (event.clientX - rect.left)/rect.width;
+      // On a closed cover, clicking anywhere on the visible cover opens it.
+      const i = flip.getCurrentPageIndex();
+      if (i === 0 && x >= .45) turn(1);
+      else if (i >= urls.length-1 && x <= .55) turn(-1);
+      else if (x >= .70) turn(1);
+      else if (x <= .30) turn(-1);
     });
-    // Mouse wheel works without moving the tldraw canvas while hovered.
     let wheelSum = 0;
     host.addEventListener('wheel', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (busy) return;
+      event.preventDefault(); event.stopPropagation();
+      if (busy) {wheelSum=0;return;}
       wheelSum += event.deltaY;
-      if (Math.abs(wheelSum) >= 32) {
-        const direction = Math.sign(wheelSum);
-        wheelSum = 0;
-        turn(direction);
-      }
-    }, { passive: false });
-    document.addEventListener('keydown', event => {
+      if (Math.abs(wheelSum) >= 45) {const d = Math.sign(wheelSum);wheelSum=0;turn(d);}
+    },{passive:false});
+    document.addEventListener('keydown',event => {
       if (event.key === 'ArrowRight') turn(1);
-      if (event.key === 'ArrowLeft') turn(-1);
+      else if (event.key === 'ArrowLeft') turn(-1);
     });
-  } catch (e) {
-    if (error) { error.hidden = false; error.textContent = e.message; }
-    console.error('Book of Tommy:', e);
+  } catch(e) {
+    if (error) {error.hidden = false;error.textContent = e.message;}
+    console.error('Book of Tommy:',e);
   }
 })();
