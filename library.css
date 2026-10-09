@@ -35,14 +35,14 @@ body{font-family:Georgia,serif}
   16% {transform:translate(-50%,-50%) translate3d(0,27px,-109px) rotateX(65deg) rotateY(-4deg) rotateZ(-74deg) scale(.73)}
   24% {transform:translate(-50%,-50%) translate3d(0,16px,-83px) rotateX(57deg) rotateY(-4deg) rotateZ(-65deg) scale(.78)}
   32% {transform:translate(-50%,-50%) translate3d(0,6px,-57px) rotateX(49deg) rotateY(-3deg) rotateZ(-55deg) scale(.83)}
-  40% {transform:translate(-50%,-50%) translate3d(0,-2px,-30px) rotateX(41deg) rotateY(-3deg) rotateZ(-46deg) scale(.87)}
-  48% {transform:translate(-50%,-50%) translate3d(0,-8px,-6px) rotateX(33deg) rotateY(-2deg) rotateZ(-37deg) scale(.91)}
-  56% {transform:translate(-50%,-50%) translate3d(0,-12px,13px) rotateX(25deg) rotateY(-2deg) rotateZ(-28deg) scale(.95)}
-  64% {transform:translate(-50%,-50%) translate3d(0,-12px,23px) rotateX(18deg) rotateY(-1deg) rotateZ(-20deg) scale(.98)}
-  72% {transform:translate(-50%,-50%) translate3d(0,-10px,24px) rotateX(12deg) rotateY(-1deg) rotateZ(-13deg) scale(1)}
-  80% {transform:translate(-50%,-50%) translate3d(0,-7px,17px) rotateX(7deg) rotateY(0) rotateZ(-7deg) scale(1.01)}
-  90% {transform:translate(-50%,-50%) translate3d(0,-3px,7px) rotateX(3deg) rotateY(0) rotateZ(-3deg) scale(1.005)}
-  100%{transform:translate(-50%,-50%) translate3d(0,0,0) rotateX(0) rotateY(0) rotateZ(0) scale(1)}
+  40% {transform:translate(-50%,-50%) translate3d(calc(var(--cover-destination-x, 0px) * .18),-2px,-30px) rotateX(41deg) rotateY(-3deg) rotateZ(-46deg) scale(.87)}
+  48% {transform:translate(-50%,-50%) translate3d(calc(var(--cover-destination-x, 0px) * .3),-8px,-6px) rotateX(33deg) rotateY(-2deg) rotateZ(-37deg) scale(.91)}
+  56% {transform:translate(-50%,-50%) translate3d(calc(var(--cover-destination-x, 0px) * .43),-12px,13px) rotateX(25deg) rotateY(-2deg) rotateZ(-28deg) scale(.95)}
+  64% {transform:translate(-50%,-50%) translate3d(calc(var(--cover-destination-x, 0px) * .58),-12px,23px) rotateX(18deg) rotateY(-1deg) rotateZ(-20deg) scale(.98)}
+  72% {transform:translate(-50%,-50%) translate3d(calc(var(--cover-destination-x, 0px) * .7),-10px,24px) rotateX(12deg) rotateY(-1deg) rotateZ(-13deg) scale(1)}
+  80% {transform:translate(-50%,-50%) translate3d(calc(var(--cover-destination-x, 0px) * .83),-7px,17px) rotateX(7deg) rotateY(0) rotateZ(-7deg) scale(1.01)}
+  90% {transform:translate(-50%,-50%) translate3d(calc(var(--cover-destination-x, 0px) * .95),-3px,7px) rotateX(3deg) rotateY(0) rotateZ(-3deg) scale(1.005)}
+  100%{transform:translate(-50%,-50%) translate3d(var(--cover-destination-x, 0px),0,0) rotateX(0) rotateY(0) rotateZ(0) scale(1)}
 }
 @keyframes spine-blend{
   0%,12%{opacity:1}

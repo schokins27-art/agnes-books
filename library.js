@@ -11,18 +11,27 @@ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let active=null,transitioning=false,readyResolve=null;
 const DURATION=690;
 // The former cover-open/close recording now belongs to shelf pickup/put-away.
-const shelfSound=new Audio('sounds/book-closing.mp3?v=10');
+const shelfSound=new Audio('sounds/book-closing.mp3?v=30');
+const paperSound=new Audio('sounds/page-turn.mp3?v=30');
+paperSound.preload='auto';paperSound.volume=.8;
 shelfSound.preload='auto';shelfSound.volume=0.7;
 function playShelfSound(){
   try {shelfSound.pause();shelfSound.currentTime=0;
     const result=shelfSound.play();result?.catch(()=>{});
   } catch(e) {console.warn('Shelf sound unavailable',e);}
 }
+function playPaperSound(){
+  try {paperSound.pause();paperSound.currentTime=0;paperSound.play()?.catch(()=>{});}catch(e){console.warn('Page audio',e);}
+}
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function preload(src){const img=new Image();img.src=src;return img.decode?.().catch(()=>{})||Promise.resolve();}
 async function fly(direction,book){
   if(reducedMotion.matches)return;
   flightSpine.src=book.image;flightCover.src=book.cover;
+  // Closed front cover is the RIGHT page of the two-page PageFlip layout.
+  // Match the flight destination to that exact half, not the frame centre.
+  const pageWidth=Math.max(100,Math.floor(Math.min(opened.clientWidth*.46,opened.clientHeight*.86*720/1020)));
+  library.style.setProperty('--cover-destination-x',`${pageWidth/2}px`);
   flight.hidden=false;
   flight.className='';
   void flight.offsetWidth;
@@ -33,7 +42,7 @@ async function fly(direction,book){
 function clearFlight(){flight.hidden=true;flight.className='';}
 async function openBook(book){
   if(active||transitioning)return;
-  active=book;transitioning=true;
+  active=book;transitioning=true;viewerGeometry=null;
   playShelfSound();
   // Immediately remove the shelf image and start the pickup animation.
   shelf.hidden=true;
@@ -42,8 +51,7 @@ async function openBook(book){
   frame.src='viewer.html?book='+encodeURIComponent(book.config);
   // Flight and loading happen at the same time, not one after another.
   const animation=fly('out',book);
-  await animation;
-  await Promise.race([ready,delay(3500)]);
+  await Promise.all([animation,ready]);
   library.classList.add('is-open');
   clearFlight();
   transitioning=false;
@@ -71,11 +79,14 @@ for(const book of BOOKS){
 window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
   if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
+  if(event.data?.type==='agnes:page-turn')playPaperSound();
+  if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
   if(event.data?.type==='agnes:return-to-shelf')closeBook();
 });
 // The embedded viewer is an iframe. Transparent pixels in an iframe still
 // capture clicks, and tldraw cannot forward board clicks into this iframe.
 // Four hit regions on the parent document explicitly cover the empty margins.
+let viewerGeometry=null;
 const outsideZones=[];
 for(let i=0;i<4;i++){
   const zone=document.createElement('div');
@@ -93,8 +104,9 @@ function layoutOutsideZones(){
   if(!width||!height)return;
   // Match the viewer's exact fixed PageFlip size in script.js.
   const pageW=Math.max(100,Math.floor(Math.min(width*.46,height*.86*720/1020)));
-  const bookW=pageW*2, bookH=Math.round(pageW*1020/720);
-  const safe=18;
+  const bookW=viewerGeometry?.width??pageW*2;
+  const bookH=viewerGeometry?.height??Math.round(pageW*1020/720);
+  const safe=4;
   const x=(width-bookW)/2-safe,y=(height-bookH)/2-safe;
   const safeBookW=bookW+2*safe,safeBookH=bookH+2*safe;
   const regions=[

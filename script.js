@@ -60,20 +60,12 @@
       window.parent.postMessage({type:'agnes:return-to-shelf'},location.origin);
     },true);
     // Only reveal the book after images and the page-flip engine are ready.
+    window.parent.postMessage({type:'agnes:geometry',geometry:{width:w*2,height:h}},location.origin);
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
-    const paperAudio = new Audio('sounds/page-turn.mp3?v=37');
-    // Shelf pickup/put-away uses the former cover recording in library.js.
-    paperAudio.preload = 'auto';
-    paperAudio.volume = 0.8;
-    function playSound(isClosing) {
-      const audio = paperAudio;
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-        const playing = audio.play();
-        if (playing) playing.catch(e => console.warn('Sound unavailable:', e));
-      } catch(e) { console.warn('Sound unavailable:', e); }
+    // Play in the parent frame: the original shelf click activated audio there.
+    function playSound() {
+      window.parent.postMessage({type:'agnes:page-turn'},location.origin);
     }
     let busy = false;
     let unlock;
