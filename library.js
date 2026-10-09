@@ -37,6 +37,7 @@ async function openBook(book){
   playShelfSound();
   // Immediately remove the shelf image and start the pickup animation.
   shelf.hidden=true;
+  opened.hidden=false; // The iframe must be unhidden before revealing the viewer.
   const ready=new Promise(resolve=>{readyResolve=resolve;});
   frame.src='viewer.html?book='+encodeURIComponent(book.config);
   // Flight and loading happen at the same time, not one after another.
