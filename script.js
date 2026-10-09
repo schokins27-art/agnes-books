@@ -44,7 +44,7 @@
     flip.loadFromHTML(sheets);
     function reportPageState(){
       const i=flip.getCurrentPageIndex();
-      const state=i===0?'front':i>=urls.length-2?'back':'open';
+      const state=i===0?'front':i===urls.length-1?'back':'open';
       window.parent.postMessage({type:'agnes:page-state',state},location.origin);
     }
     flip.on('flip',reportPageState);
@@ -58,7 +58,7 @@
       const page=flip.getCurrentPageIndex();
       const middle=rect.left+rect.width/2;
       if(page===0 && x<middle) return true;
-      if(page>=urls.length-2 && x>middle) return true;
+      if(page===urls.length-1 && x>middle) return true;
       return false;
     }
     document.addEventListener('pointerdown',event=>{
@@ -71,19 +71,6 @@
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     // Play in the parent frame: the original shelf click activated audio there.
-    const pageAudio = new Audio('sounds/page-turn.mp3?v=45');
-    pageAudio.preload = 'auto';
-    pageAudio.volume = 0.85;
-    function playSound() {
-      // This runs inside the viewer, in the actual click/wheel gesture.
-      // The parent-frame postMessage cannot reliably unlock audio in tldraw.
-      try {
-        pageAudio.pause();
-        pageAudio.currentTime = 0;
-        const playback = pageAudio.play();
-        playback?.catch(err => console.warn('Page-turn audio blocked:', err));
-      } catch (err) { console.warn('Page-turn audio unavailable:', err); }
-    }
     let busy = false;
     let unlock;
     const turn = direction => {

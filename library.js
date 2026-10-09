@@ -20,32 +20,28 @@ function playShelfSound(){
     const result=shelfSound.play();result?.catch(()=>{});
   } catch(e) {console.warn('Shelf sound unavailable',e);}
 }
-// Decode the paper sound once and unlock Web Audio on the user's shelf click.
-let paperContext=null,paperBuffer=null;
-const paperReady=fetch('sounds/page-turn.mp3?v=63',{cache:'force-cache'})
-  .then(r=>{if(!r.ok)throw new Error('Missing page sound');return r.arrayBuffer();})
-  .then(bytes=>{const AudioCtx=window.AudioContext||window.webkitAudioContext;
-    if(!AudioCtx)return null;
-    paperContext=new AudioCtx();
-    return paperContext.decodeAudioData(bytes);
-  }).then(buffer=>{paperBuffer=buffer;return buffer;})
-  .catch(e=>{console.warn('Paper sound loading:',e);return null;});
+// Decode the sound using one persistent context created on the shelf click.
+let paperContext=null,paperBuffer=null,paperLoad=null;
 function unlockPaperSound(){
-  const AudioCtx=window.AudioContext||window.webkitAudioContext;
-  if(!paperContext && AudioCtx)paperContext=new AudioCtx();
-  paperContext?.resume().catch(()=>{});
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)return;
+  if(!paperContext)paperContext=new AC();
+  paperContext.resume().catch(e=>console.warn('Audio resume:',e));
+  if(!paperLoad)paperLoad=fetch('sounds/page-turn.mp3?v=64',{cache:'no-store'})
+    .then(r=>{if(!r.ok)throw Error('Page sound HTTP '+r.status);return r.arrayBuffer();})
+    .then(bytes=>paperContext.decodeAudioData(bytes))
+    .then(buffer=>{paperBuffer=buffer;})
+    .catch(e=>console.error('Page sound decode:',e));
 }
 function playPaperSound(){
   if(paperContext&&paperBuffer){
-    if(paperContext.state==='suspended')paperContext.resume().catch(()=>{});
-    const src=paperContext.createBufferSource();
-    const gain=paperContext.createGain();
-    gain.gain.value=.85;
-    src.buffer=paperBuffer;src.connect(gain);gain.connect(paperContext.destination);src.start();
-  }else{
-    // Fallback if Web Audio is unavailable.
-    paperSound.currentTime=0;paperSound.play().catch(e=>console.warn('Page sound blocked',e));
+    const source=paperContext.createBufferSource();
+    const gain=paperContext.createGain();gain.gain.value=.85;
+    source.buffer=paperBuffer;source.connect(gain);gain.connect(paperContext.destination);
+    source.start();return;
   }
+  paperSound.pause();paperSound.currentTime=0;
+  paperSound.play().catch(e=>console.warn('Page sound fallback:',e));
 }
 
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -70,8 +66,6 @@ async function openBook(book){
   active=book;transitioning=true;viewerGeometry=null;viewerPage='front';
   unlockPaperSound();
   playShelfSound();
-  // Prime page-turn audio during the trusted shelf click, not later in iframe.
-  try {paperSound.volume=0;paperSound.play()?.then(()=>{paperSound.pause();paperSound.currentTime=0;paperSound.volume=.8;}).catch(()=>{paperSound.volume=.8;});}catch(e){paperSound.volume=.8;}
   // Immediately remove the shelf image and start the pickup animation.
   shelf.hidden=true;
   opened.hidden=false; // The iframe must be unhidden before revealing the viewer.
