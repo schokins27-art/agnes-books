@@ -127,7 +127,7 @@ let viewerPage='front';
 let viewerTurning=false;
 let viewerCoverRect=null;
 const outsideZones=[];
-for(let i=0;i<5;i++){
+for(let i=0;i<4;i++){
   const zone=document.createElement('div');
   zone.className='outside-book-zone';
   zone.setAttribute('aria-label','Убрать книгу на полку');
@@ -148,21 +148,13 @@ function layoutOutsideZones(){
   const safe=4;
   const x=(width-bookW)/2-safe,y=(height-bookH)/2-safe;
   const safeBookW=bookW+2*safe,safeBookH=bookH+2*safe;
-  // Fixed two-page PageFlip spread: front cover is on the RIGHT,
-  // back cover is on the LEFT. The empty half is exactly one page wide.
-  // Never use getBoundingClientRect() on a transformed PageFlip cover.
-  let coverBlank=[0,0,0,0];
-  if(!viewerTurning && viewerPage==='front'){
-    coverBlank=[x+safe,y+safe,Math.max(0,bookW/2-2),bookH];
-  }else if(!viewerTurning && viewerPage==='back'){
-    coverBlank=[x+safe+bookW/2+2,y+safe,Math.max(0,bookW/2-2),bookH];
-  }
+  // Never place a parent overlay on either page. The viewer itself
+  // handles empty halves when a cover is closed.
   const regions=[
     [0,0,width,Math.max(0,y)],
     [0,y,Math.max(0,x),Math.max(0,safeBookH)],
     [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
-    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)],
-    coverBlank
+    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)]
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];

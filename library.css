@@ -67,5 +67,4 @@ body{font-family:Georgia,serif}
 /* Clickable empty space around the rendered pages, above the iframe. */
 .outside-book-zone{position:absolute;z-index:4;background:transparent;cursor:default;touch-action:manipulation}
 
-/* Empty closed-cover half sits above the embedded viewer. */
-.outside-book-zone:last-child{z-index:8;pointer-events:auto}
+
