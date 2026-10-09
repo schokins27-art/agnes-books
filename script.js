@@ -48,7 +48,7 @@
       window.parent.postMessage({type:'agnes:page-state',state},location.origin);
     }
     flip.on('flip',reportPageState);
-    flip.on('changeState',reportPageState);
+
     reportPageState();
     // Clicking transparent space outside the VISIBLE pages puts the book away.
     // Closed front cover occupies the right half; closed rear cover the left.

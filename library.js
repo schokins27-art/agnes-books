@@ -20,38 +20,16 @@ function playShelfSound(){
     const result=shelfSound.play();result?.catch(()=>{});
   } catch(e) {console.warn('Shelf sound unavailable',e);}
 }
-// Unlock ONE Web Audio context on the actual shelf button click.
-// The iframe later sends page-turn messages; wheel scrolling need not unlock audio.
-let paperContext=null,paperBuffer=null,paperLoad=null;
-let paperBytes=null;
-fetch('sounds/page-turn.mp3?v=68').then(r=>r.ok?r.arrayBuffer():Promise.reject(Error('Sound HTTP '+r.status))).then(b=>{paperBytes=b;}).catch(e=>console.warn('Sound preload:',e));
+// Keep a single page-turn audio element unlocked by the initial user gesture.
 function unlockPaperSound(){
-  const AC=window.AudioContext||window.webkitAudioContext;
-  if(!AC)return;
-  if(!paperContext)paperContext=new AC();
-  paperContext.resume().catch(e=>console.warn('Audio resume:',e));
-  // Start a silent source synchronously within the user gesture.
-  const silent=paperContext.createBuffer(1,1,paperContext.sampleRate);
-  const node=paperContext.createBufferSource();node.buffer=silent;
-  node.connect(paperContext.destination);node.start();
-  if(!paperLoad){
-    paperLoad=(paperBytes?Promise.resolve(paperBytes):fetch('sounds/page-turn.mp3?v=68').then(r=>{if(!r.ok)throw Error('Page sound HTTP '+r.status);return r.arrayBuffer();}))
-      .then(bytes=>paperContext.decodeAudioData(bytes))
-      .then(buffer=>{paperBuffer=buffer;return buffer;})
-      .catch(e=>{console.error('Page sound failed:',e);return null;});
-  }
+  paperSound.muted=true;
+  const p=paperSound.play();
+  p?.then(()=>{paperSound.pause();paperSound.currentTime=0;paperSound.muted=false;})
+    .catch(e=>{paperSound.muted=false;console.warn('Paper unlock:',e);});
 }
 function playPaperSound(){
-  if(paperContext && paperBuffer){
-    const node=paperContext.createBufferSource();node.buffer=paperBuffer;
-    const gain=paperContext.createGain();gain.gain.value=.9;
-    node.connect(gain);gain.connect(paperContext.destination);
-    if(paperContext.state==='suspended')paperContext.resume().catch(e=>console.warn('Paper resume:',e));
-    node.start(0);
-  }else{
-    const oneShot=new Audio('sounds/page-turn.mp3?v=67');
-    oneShot.volume=.85;oneShot.play().catch(e=>console.warn('Paper fallback:',e));
-  }
+  paperSound.pause();paperSound.currentTime=0;paperSound.muted=false;
+  paperSound.play().catch(e=>console.warn('Page turn playback:',e));
 }
 
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -131,7 +109,7 @@ window.addEventListener('message',event=>{
 let viewerGeometry=null;
 let viewerPage='front';
 const outsideZones=[];
-for(let i=0;i<4;i++){
+for(let i=0;i<5;i++){
   const zone=document.createElement('div');
   zone.className='outside-book-zone';
   zone.setAttribute('aria-label','Убрать книгу на полку');
@@ -156,7 +134,12 @@ function layoutOutsideZones(){
     [0,0,width,Math.max(0,y)],
     [0,y,Math.max(0,x),Math.max(0,safeBookH)],
     [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
-    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)]
+    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)],
+    viewerPage==='front'
+      ? [x+safe,y,bookW/2-6,bookH]
+      : viewerPage==='back'
+        ? [x+safe+bookW/2+6,y,bookW/2-6,bookH]
+        : [0,0,0,0]
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];
