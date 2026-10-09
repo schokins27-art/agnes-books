@@ -5,14 +5,12 @@ const BOOKS = [
 const shelf = document.getElementById('shelf');
 const opened = document.getElementById('opened');
 const frame = document.getElementById('book-frame');
-const back = document.getElementById('back-to-shelf');
 let active = null;
 function openBook(book) {
   active = book.id;
   shelf.hidden = true;
   opened.hidden = false;
   frame.src = 'viewer.html?book=' + encodeURIComponent(book.config);
-  back.focus({preventScroll:true});
 }
 function closeBook() {
   if (!active) return;
@@ -35,7 +33,11 @@ for (const book of BOOKS) {
   button.addEventListener('click',() => openBook(book));
   shelf.append(button);
 }
-back.addEventListener('click',closeBook);
+// The return control lives on the closed back cover inside viewer.html.
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || event.source !== frame.contentWindow) return;
+  if (event.data?.type === 'agnes:return-to-shelf' && active) closeBook();
+});
 document.addEventListener('keydown',e => {
   if (e.key === 'Escape' && active) {e.preventDefault();closeBook();}
 });

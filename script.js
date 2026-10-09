@@ -40,6 +40,26 @@
       mobileScrollSupport:false, showPageCorners:false, disableFlipByClick:true, startPage:0
     });
     flip.loadFromHTML(sheets);
+    const putAway = document.getElementById('put-away');
+    const rearIndex = urls.length - 1;
+    function syncPutAway() {
+      if (!putAway) return;
+      const onRear = flip.getCurrentPageIndex() >= rearIndex;
+      putAway.hidden = !onRear;
+      if (!onRear) return;
+      // StPageFlip closes the rear cover onto the left half of the spread.
+      const hostRect = host.getBoundingClientRect();
+      const viewerRect = document.getElementById('viewer').getBoundingClientRect();
+      putAway.style.left = (hostRect.left - viewerRect.left + hostRect.width * .25) + 'px';
+      putAway.style.top = (hostRect.top - viewerRect.top + hostRect.height * .72) + 'px';
+    }
+    flip.on('flip', () => syncPutAway());
+    window.addEventListener('resize', syncPutAway);
+    if (putAway) putAway.addEventListener('click', event => {
+      event.preventDefault(); event.stopPropagation();
+      window.parent.postMessage({type:'agnes:return-to-shelf'}, location.origin);
+    });
+    syncPutAway();
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     const paperAudio = new Audio('sounds/page-turn.mp3?v=37');
     const closingAudio = new Audio('sounds/book-closing.mp3?v=37');
