@@ -23,6 +23,8 @@ function playShelfSound(){
 // Unlock ONE Web Audio context on the actual shelf button click.
 // The iframe later sends page-turn messages; wheel scrolling need not unlock audio.
 let paperContext=null,paperBuffer=null,paperLoad=null;
+let paperBytes=null;
+fetch('sounds/page-turn.mp3?v=68').then(r=>r.ok?r.arrayBuffer():Promise.reject(Error('Sound HTTP '+r.status))).then(b=>{paperBytes=b;}).catch(e=>console.warn('Sound preload:',e));
 function unlockPaperSound(){
   const AC=window.AudioContext||window.webkitAudioContext;
   if(!AC)return;
@@ -33,8 +35,7 @@ function unlockPaperSound(){
   const node=paperContext.createBufferSource();node.buffer=silent;
   node.connect(paperContext.destination);node.start();
   if(!paperLoad){
-    paperLoad=fetch('sounds/page-turn.mp3?v=67')
-      .then(r=>{if(!r.ok)throw Error('Page sound HTTP '+r.status);return r.arrayBuffer();})
+    paperLoad=(paperBytes?Promise.resolve(paperBytes):fetch('sounds/page-turn.mp3?v=68').then(r=>{if(!r.ok)throw Error('Page sound HTTP '+r.status);return r.arrayBuffer();}))
       .then(bytes=>paperContext.decodeAudioData(bytes))
       .then(buffer=>{paperBuffer=buffer;return buffer;})
       .catch(e=>{console.error('Page sound failed:',e);return null;});
@@ -45,7 +46,8 @@ function playPaperSound(){
     const node=paperContext.createBufferSource();node.buffer=paperBuffer;
     const gain=paperContext.createGain();gain.gain.value=.9;
     node.connect(gain);gain.connect(paperContext.destination);
-    paperContext.resume().then(()=>node.start()).catch(e=>console.warn('Paper playback:',e));
+    if(paperContext.state==='suspended')paperContext.resume().catch(e=>console.warn('Paper resume:',e));
+    node.start(0);
   }else{
     const oneShot=new Audio('sounds/page-turn.mp3?v=67');
     oneShot.volume=.85;oneShot.play().catch(e=>console.warn('Paper fallback:',e));

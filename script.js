@@ -48,22 +48,24 @@
       window.parent.postMessage({type:'agnes:page-state',state},location.origin);
     }
     flip.on('flip',reportPageState);
+    flip.on('changeState',reportPageState);
     reportPageState();
     // Clicking transparent space outside the VISIBLE pages puts the book away.
     // Closed front cover occupies the right half; closed rear cover the left.
     function outsideVisibleBook(event) {
       const x=event.clientX,y=event.clientY;
-      const page=flip.getCurrentPageIndex();
-      // On a closed cover, use the ACTUAL transformed cover bounds, not the
-      // two-page container bounds. PageFlip shifts the cover inside that box.
-      if(page===0 || page>=urls.length-2){
-        const cover=page===0?sheets[0]:sheets[urls.length-1];
-        const r=cover.getBoundingClientRect();
-        if(r.width>10&&r.height>10){
-          return x<r.left-3||x>r.right+3||y<r.top-3||y>r.bottom+3;
-        }
-      }
       const r=host.getBoundingClientRect();
+      const page=flip.getCurrentPageIndex();
+      const mid=r.left+r.width/2;
+      // PageFlip uses a full-spread element even when only one cover is
+      // visible. Never trust the cover element's transformed bounding box:
+      // on some browsers it spans both halves and blocks the blank side.
+      if(page===0){
+        if(x>=r.left&&x<mid-5&&y>=r.top&&y<=r.bottom)return true;
+      }
+      if(page>=urls.length-2){
+        if(x>mid+5&&x<=r.right&&y>=r.top&&y<=r.bottom)return true;
+      }
       return x<r.left||x>r.right||y<r.top||y>r.bottom;
     }
     document.addEventListener('pointerdown',event=>{
