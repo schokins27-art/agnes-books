@@ -58,7 +58,7 @@
       const page=flip.getCurrentPageIndex();
       const middle=rect.left+rect.width/2;
       if(page===0 && x<middle) return true;
-      if(page===urls.length-1 && x>middle) return true;
+      if(page>=urls.length-2 && x>middle) return true;
       return false;
     }
     document.addEventListener('pointerdown',event=>{
@@ -71,6 +71,12 @@
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     // Play in the parent frame: the original shelf click activated audio there.
+    const paperAudio=new Audio('sounds/page-turn.mp3?v=65');
+    paperAudio.preload='auto';paperAudio.volume=.85;
+    function playTurn(){
+      paperAudio.pause();paperAudio.currentTime=0;
+      paperAudio.play().catch(e=>console.warn('Page sound unavailable:',e));
+    }
     let busy = false;
     let unlock;
     const turn = direction => {
@@ -85,7 +91,7 @@
       // flipping from it closes the back cover at N-1.
       const coverTransition = (direction > 0 && (i === 0 || i >= urls.length - 3)) ||
                               (direction < 0 && (i <= 2 || i >= urls.length - 1));
-      window.parent.postMessage({type:'agnes:page-turn'},location.origin);
+      playTurn();
       clearTimeout(unlock);
       if (direction > 0) flip.flipNext('bottom');
       else flip.flipPrev('bottom');
@@ -97,7 +103,7 @@
       // On a closed cover, clicking anywhere on the visible cover opens it.
       const i = flip.getCurrentPageIndex();
       if (i === 0 && x >= .45) turn(1);
-      else if (i >= urls.length-1 && x <= .55) turn(-1);
+      else if (i >= urls.length-2 && x <= .55) turn(-1);
       else if (x >= .70) turn(1);
       else if (x <= .30) turn(-1);
     });
