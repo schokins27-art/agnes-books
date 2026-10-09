@@ -69,4 +69,40 @@ window.addEventListener('message',event=>{
   if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
   if(event.data?.type==='agnes:return-to-shelf')closeBook();
 });
+// The embedded viewer is an iframe. Transparent pixels in an iframe still
+// capture clicks, and tldraw cannot forward board clicks into this iframe.
+// Four hit regions on the parent document explicitly cover the empty margins.
+const outsideZones=[];
+for(let i=0;i<4;i++){
+  const zone=document.createElement('div');
+  zone.className='outside-book-zone';
+  zone.setAttribute('aria-label','Убрать книгу на полку');
+  zone.addEventListener('pointerdown',e=>{
+    if(e.button!==0 || !active || transitioning)return;
+    e.preventDefault();e.stopPropagation();closeBook();
+  });
+  opened.appendChild(zone);
+  outsideZones.push(zone);
+}
+function layoutOutsideZones(){
+  const width=opened.clientWidth, height=opened.clientHeight;
+  if(!width||!height)return;
+  // Match the viewer's exact fixed PageFlip size in script.js.
+  const pageW=Math.max(100,Math.floor(Math.min(width*.46,height*.86*720/1020)));
+  const bookW=pageW*2, bookH=Math.round(pageW*1020/720);
+  const x=(width-bookW)/2,y=(height-bookH)/2;
+  const regions=[
+    [0,0,width,Math.max(0,y)],
+    [0,y,Math.max(0,x),Math.max(0,bookH)],
+    [x+bookW,y,Math.max(0,width-x-bookW),Math.max(0,bookH)],
+    [0,y+bookH,width,Math.max(0,height-y-bookH)]
+  ];
+  outsideZones.forEach((zone,i)=>{
+    const [left,top,w,h]=regions[i];
+    Object.assign(zone.style,{left:left+'px',top:top+'px',width:w+'px',height:h+'px'});
+  });
+}
+window.addEventListener('resize',layoutOutsideZones);
+new ResizeObserver(layoutOutsideZones).observe(opened);
+layoutOutsideZones();
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&active&&!transitioning){e.preventDefault();closeBook();}});

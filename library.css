@@ -63,3 +63,6 @@ body{font-family:Georgia,serif}
   82%,100%{opacity:1}
 }
 @media(prefers-reduced-motion:reduce){#flight{display:none!important}.spine{transition:none!important}}
+
+/* Clickable empty space around the rendered pages, above the iframe. */
+.outside-book-zone{position:absolute;z-index:4;background:transparent;cursor:default;touch-action:manipulation}
