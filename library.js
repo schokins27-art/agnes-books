@@ -20,28 +20,36 @@ function playShelfSound(){
     const result=shelfSound.play();result?.catch(()=>{});
   } catch(e) {console.warn('Shelf sound unavailable',e);}
 }
-// Decode the sound using one persistent context created on the shelf click.
+// Unlock ONE Web Audio context on the actual shelf button click.
+// The iframe later sends page-turn messages; wheel scrolling need not unlock audio.
 let paperContext=null,paperBuffer=null,paperLoad=null;
 function unlockPaperSound(){
   const AC=window.AudioContext||window.webkitAudioContext;
   if(!AC)return;
   if(!paperContext)paperContext=new AC();
   paperContext.resume().catch(e=>console.warn('Audio resume:',e));
-  if(!paperLoad)paperLoad=fetch('sounds/page-turn.mp3?v=64',{cache:'no-store'})
-    .then(r=>{if(!r.ok)throw Error('Page sound HTTP '+r.status);return r.arrayBuffer();})
-    .then(bytes=>paperContext.decodeAudioData(bytes))
-    .then(buffer=>{paperBuffer=buffer;})
-    .catch(e=>console.error('Page sound decode:',e));
+  // Start a silent source synchronously within the user gesture.
+  const silent=paperContext.createBuffer(1,1,paperContext.sampleRate);
+  const node=paperContext.createBufferSource();node.buffer=silent;
+  node.connect(paperContext.destination);node.start();
+  if(!paperLoad){
+    paperLoad=fetch('sounds/page-turn.mp3?v=67')
+      .then(r=>{if(!r.ok)throw Error('Page sound HTTP '+r.status);return r.arrayBuffer();})
+      .then(bytes=>paperContext.decodeAudioData(bytes))
+      .then(buffer=>{paperBuffer=buffer;return buffer;})
+      .catch(e=>{console.error('Page sound failed:',e);return null;});
+  }
 }
 function playPaperSound(){
-  if(paperContext&&paperBuffer){
-    const source=paperContext.createBufferSource();
-    const gain=paperContext.createGain();gain.gain.value=.85;
-    source.buffer=paperBuffer;source.connect(gain);gain.connect(paperContext.destination);
-    source.start();return;
+  if(paperContext && paperBuffer){
+    const node=paperContext.createBufferSource();node.buffer=paperBuffer;
+    const gain=paperContext.createGain();gain.gain.value=.9;
+    node.connect(gain);gain.connect(paperContext.destination);
+    paperContext.resume().then(()=>node.start()).catch(e=>console.warn('Paper playback:',e));
+  }else{
+    const oneShot=new Audio('sounds/page-turn.mp3?v=67');
+    oneShot.volume=.85;oneShot.play().catch(e=>console.warn('Paper fallback:',e));
   }
-  paperSound.pause();paperSound.currentTime=0;
-  paperSound.play().catch(e=>console.warn('Page sound fallback:',e));
 }
 
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -121,7 +129,7 @@ window.addEventListener('message',event=>{
 let viewerGeometry=null;
 let viewerPage='front';
 const outsideZones=[];
-for(let i=0;i<5;i++){
+for(let i=0;i<4;i++){
   const zone=document.createElement('div');
   zone.className='outside-book-zone';
   zone.setAttribute('aria-label','Убрать книгу на полку');
@@ -146,10 +154,7 @@ function layoutOutsideZones(){
     [0,0,width,Math.max(0,y)],
     [0,y,Math.max(0,x),Math.max(0,safeBookH)],
     [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
-    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)],
-    // On the closed back cover, the left half is the cover itself.
-    // The blank RIGHT half must return the book to the shelf.
-    viewerPage==='back' ? [x+safe+bookW/2,y+safe,bookW/2-safe,bookH] : [0,0,0,0]
+    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)]
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];
