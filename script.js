@@ -40,26 +40,25 @@
       mobileScrollSupport:false, showPageCorners:false, disableFlipByClick:true, startPage:0
     });
     flip.loadFromHTML(sheets);
-    const putAway = document.getElementById('put-away');
-    const rearIndex = urls.length - 1;
-    function syncPutAway() {
-      if (!putAway) return;
-      const onRear = flip.getCurrentPageIndex() >= rearIndex;
-      putAway.hidden = !onRear;
-      if (!onRear) return;
-      // StPageFlip closes the rear cover onto the left half of the spread.
-      const hostRect = host.getBoundingClientRect();
-      const viewerRect = document.getElementById('viewer').getBoundingClientRect();
-      putAway.style.left = (hostRect.left - viewerRect.left + hostRect.width * .25) + 'px';
-      putAway.style.top = (hostRect.top - viewerRect.top + hostRect.height * .72) + 'px';
+    // Clicking transparent space outside the VISIBLE pages puts the book away.
+    // Closed front cover occupies the right half; closed rear cover the left.
+    function outsideVisibleBook(event) {
+      const rect=host.getBoundingClientRect();
+      const x=event.clientX, y=event.clientY;
+      if(y<rect.top || y>rect.bottom || x<rect.left || x>rect.right) return true;
+      const page=flip.getCurrentPageIndex();
+      const middle=rect.left+rect.width/2;
+      if(page===0 && x<middle) return true;
+      if(page>=urls.length-1 && x>middle) return true;
+      return false;
     }
-    flip.on('flip', () => syncPutAway());
-    window.addEventListener('resize', syncPutAway);
-    if (putAway) putAway.addEventListener('click', event => {
-      event.preventDefault(); event.stopPropagation();
-      window.parent.postMessage({type:'agnes:return-to-shelf'}, location.origin);
-    });
-    syncPutAway();
+    document.addEventListener('pointerdown',event=>{
+      if(event.button!==0 || !outsideVisibleBook(event))return;
+      event.preventDefault();event.stopPropagation();
+      window.parent.postMessage({type:'agnes:return-to-shelf'},location.origin);
+    },true);
+    // Only reveal the book after images and the page-flip engine are ready.
+    window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     const paperAudio = new Audio('sounds/page-turn.mp3?v=37');
     const closingAudio = new Audio('sounds/book-closing.mp3?v=37');

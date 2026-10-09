@@ -1,62 +1,62 @@
-/* Add new books to this list; each has a shelf image, front cover and viewer configuration. */
+/* Add books here later: each book has its own spine image, cover and viewer config. */
 const BOOKS=[{id:'tommy',title:'Book of Tommy',image:'assets/book-of-tommy-spine.webp',cover:'books/tommy/cover.webp',config:'books/tommy/book.json'}];
 const library=document.getElementById('library');
 const shelf=document.getElementById('shelf');
 const opened=document.getElementById('opened');
 const frame=document.getElementById('book-frame');
 const flight=document.getElementById('flight');
-const flyingCover=document.getElementById('flying-cover');
-const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
-let active=null,transitioning=false,animationTimer=null;
-const motionTime=()=>reducedMotion.matches?0:620;
-function animateFlight(direction,book,done){
-  clearTimeout(animationTimer);
-  flyingCover.src=book.cover;
+const flightSpine=document.getElementById('flight-spine');
+const flightCover=document.getElementById('flight-cover');
+const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+let active=null,transitioning=false,readyResolve=null;
+const DURATION=660;
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function preload(src){const img=new Image();img.src=src;return img.decode?.().catch(()=>{})||Promise.resolve();}
+async function fly(direction,book){
+  if(reducedMotion.matches)return;
+  flightSpine.src=book.image;flightCover.src=book.cover;
   flight.hidden=false;
   flight.className='';
   void flight.offsetWidth;
-  flight.className=direction==='out'?'is-lifting':'is-returning';
-  animationTimer=setTimeout(()=>{flight.className='';flight.hidden=true;done();},motionTime());
+  flight.classList.add(direction==='out'?'flight-out':'flight-back');
+  await delay(DURATION);
+  flight.hidden=true;flight.className='';
 }
-function openBook(book){
+async function openBook(book){
   if(active||transitioning)return;
-  transitioning=true;active=book;
-  library.classList.add('is-transitioning');
+  active=book;transitioning=true;
+  // Prepare the actual book behind the animation. Do not reveal it before ready.
   opened.hidden=false;
-  frame.onload=()=>{
-    frame.onload=null;
-    animateFlight('out',book,()=>{
-      shelf.hidden=true;
-      library.classList.add('is-open');
-      library.classList.remove('is-transitioning');
-      transitioning=false;
-    });
-  };
+  const ready=new Promise(resolve=>{readyResolve=resolve;});
   frame.src='viewer.html?book='+encodeURIComponent(book.config);
+  await Promise.race([ready,delay(10000)]);
+  // The original shelf book is hidden BEFORE the flight begins: never two books.
+  shelf.hidden=true;
+  await fly('out',book);
+  library.classList.add('is-open');
+  transitioning=false;
 }
-function closeBook(){
+async function closeBook(){
   if(!active||transitioning)return;
   transitioning=true;
   const book=active;
-  library.classList.add('is-transitioning');
   library.classList.remove('is-open');
+  await fly('back',book);
+  frame.src='about:blank';
+  opened.hidden=true;
   shelf.hidden=false;
-  animateFlight('back',book,()=>{
-    frame.src='about:blank';
-    opened.hidden=true;
-    active=null;
-    transitioning=false;
-    library.classList.remove('is-transitioning');
-  });
+  active=null;transitioning=false;
 }
 for(const book of BOOKS){
   const button=document.createElement('button');button.className='spine';button.type='button';
   button.title='Открыть: '+book.title;button.setAttribute('aria-label','Открыть: '+book.title);
   const img=document.createElement('img');img.src=book.image;img.alt=book.title;img.draggable=false;
   button.append(img);button.addEventListener('click',()=>openBook(book));shelf.append(button);
+  preload(book.cover);
 }
 window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
+  if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
   if(event.data?.type==='agnes:return-to-shelf')closeBook();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&active&&!transitioning){e.preventDefault();closeBook();}});
