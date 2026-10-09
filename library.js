@@ -20,9 +20,34 @@ function playShelfSound(){
     const result=shelfSound.play();result?.catch(()=>{});
   } catch(e) {console.warn('Shelf sound unavailable',e);}
 }
-function playPaperSound(){
-  try {paperSound.pause();paperSound.currentTime=0;paperSound.play()?.catch(()=>{});}catch(e){console.warn('Page audio',e);}
+// Decode the paper sound once and unlock Web Audio on the user's shelf click.
+let paperContext=null,paperBuffer=null;
+const paperReady=fetch('sounds/page-turn.mp3?v=63',{cache:'force-cache'})
+  .then(r=>{if(!r.ok)throw new Error('Missing page sound');return r.arrayBuffer();})
+  .then(bytes=>{const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return null;
+    paperContext=new AudioCtx();
+    return paperContext.decodeAudioData(bytes);
+  }).then(buffer=>{paperBuffer=buffer;return buffer;})
+  .catch(e=>{console.warn('Paper sound loading:',e);return null;});
+function unlockPaperSound(){
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!paperContext && AudioCtx)paperContext=new AudioCtx();
+  paperContext?.resume().catch(()=>{});
 }
+function playPaperSound(){
+  if(paperContext&&paperBuffer){
+    if(paperContext.state==='suspended')paperContext.resume().catch(()=>{});
+    const src=paperContext.createBufferSource();
+    const gain=paperContext.createGain();
+    gain.gain.value=.85;
+    src.buffer=paperBuffer;src.connect(gain);gain.connect(paperContext.destination);src.start();
+  }else{
+    // Fallback if Web Audio is unavailable.
+    paperSound.currentTime=0;paperSound.play().catch(e=>console.warn('Page sound blocked',e));
+  }
+}
+
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function preload(src){const img=new Image();img.src=src;return img.decode?.().catch(()=>{})||Promise.resolve();}
 async function fly(direction,book){
@@ -43,6 +68,7 @@ function clearFlight(){flight.hidden=true;flight.className='';}
 async function openBook(book){
   if(active||transitioning)return;
   active=book;transitioning=true;viewerGeometry=null;viewerPage='front';
+  unlockPaperSound();
   playShelfSound();
   // Prime page-turn audio during the trusted shelf click, not later in iframe.
   try {paperSound.volume=0;paperSound.play()?.then(()=>{paperSound.pause();paperSound.currentTime=0;paperSound.volume=.8;}).catch(()=>{paperSound.volume=.8;});}catch(e){paperSound.volume=.8;}
@@ -128,7 +154,7 @@ function layoutOutsideZones(){
     [0,y,Math.max(0,x),Math.max(0,safeBookH)],
     [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
     [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)],
-    viewerPage==='front' ? [x+safe,y,bookW/2-safe,bookH] : viewerPage==='back' ? [x+safe+bookW/2,y,bookW/2-safe,bookH] : [0,0,0,0]
+    viewerPage==='front' ? [x+safe,y,bookW/2,bookH] : viewerPage==='back' ? [x+safe+bookW/2,y,bookW/2,bookH] : [0,0,0,0]
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];

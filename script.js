@@ -44,7 +44,7 @@
     flip.loadFromHTML(sheets);
     function reportPageState(){
       const i=flip.getCurrentPageIndex();
-      const state=i===0?'front':i>=urls.length-1?'back':'open';
+      const state=i===0?'front':i>=urls.length-2?'back':'open';
       window.parent.postMessage({type:'agnes:page-state',state},location.origin);
     }
     flip.on('flip',reportPageState);
@@ -58,7 +58,7 @@
       const page=flip.getCurrentPageIndex();
       const middle=rect.left+rect.width/2;
       if(page===0 && x<middle) return true;
-      if(page>=urls.length-1 && x>middle) return true;
+      if(page>=urls.length-2 && x>middle) return true;
       return false;
     }
     document.addEventListener('pointerdown',event=>{
