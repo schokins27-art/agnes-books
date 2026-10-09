@@ -109,8 +109,7 @@ for(const book of BOOKS){
 window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
   if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
-  // Page audio is played directly in the viewer's trusted interaction.
-  // Playback lives in parent iframe where the initial shelf click activated audio.
+  if(event.data?.type==='agnes:page-turn')playPaperSound();
   if(event.data?.type==='agnes:viewer-error')console.error('Book viewer:',event.data.message);
   if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
   if(event.data?.type==='agnes:page-state'){viewerPage=event.data.state;layoutOutsideZones();}
@@ -122,7 +121,7 @@ window.addEventListener('message',event=>{
 let viewerGeometry=null;
 let viewerPage='front';
 const outsideZones=[];
-for(let i=0;i<4;i++){
+for(let i=0;i<5;i++){
   const zone=document.createElement('div');
   zone.className='outside-book-zone';
   zone.setAttribute('aria-label','Убрать книгу на полку');
@@ -147,7 +146,10 @@ function layoutOutsideZones(){
     [0,0,width,Math.max(0,y)],
     [0,y,Math.max(0,x),Math.max(0,safeBookH)],
     [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
-    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)]
+    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)],
+    // On the closed back cover, the left half is the cover itself.
+    // The blank RIGHT half must return the book to the shelf.
+    viewerPage==='back' ? [x+safe+bookW/2,y+safe,bookW/2-safe,bookH] : [0,0,0,0]
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];

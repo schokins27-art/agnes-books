@@ -44,7 +44,7 @@
     flip.loadFromHTML(sheets);
     function reportPageState(){
       const i=flip.getCurrentPageIndex();
-      const state=i===0?'front':i===urls.length-1?'back':'open';
+      const state=i===0?'front':i>=urls.length-2?'back':'open';
       window.parent.postMessage({type:'agnes:page-state',state},location.origin);
     }
     flip.on('flip',reportPageState);
@@ -71,11 +71,8 @@
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     // Play in the parent frame: the original shelf click activated audio there.
-    const paperAudio=new Audio('sounds/page-turn.mp3?v=65');
-    paperAudio.preload='auto';paperAudio.volume=.85;
     function playTurn(){
-      paperAudio.pause();paperAudio.currentTime=0;
-      paperAudio.play().catch(e=>console.warn('Page sound unavailable:',e));
+      window.parent.postMessage({type:'agnes:page-turn'},location.origin);
     }
     let busy = false;
     let unlock;
