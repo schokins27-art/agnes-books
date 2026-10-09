@@ -1,0 +1,16 @@
+{
+  "title": "Book of Tommy",
+  "cover": "cover.webp",
+  "back": "back.webp",
+  "pages": [
+    "page-01.webp",
+    "page-02.webp",
+    "page-03.webp",
+    "page-04.webp",
+    "page-05.webp",
+    "page-06.webp",
+    "page-07.webp",
+    "page-08.webp"
+  ],
+  "startClosed": true
+}
