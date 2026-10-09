@@ -28,21 +28,22 @@ async function fly(direction,book){
   void flight.offsetWidth;
   flight.classList.add(direction==='out'?'flight-out':'flight-back');
   await delay(DURATION);
-  flight.hidden=true;flight.className='';
+  // Keep the last animated frame visible until the actual viewer is ready.
 }
+function clearFlight(){flight.hidden=true;flight.className='';}
 async function openBook(book){
   if(active||transitioning)return;
   active=book;transitioning=true;
   playShelfSound();
-  // Prepare the actual book behind the animation. Do not reveal it before ready.
-  opened.hidden=false;
+  // Immediately remove the shelf image and start the pickup animation.
+  shelf.hidden=true;
   const ready=new Promise(resolve=>{readyResolve=resolve;});
   frame.src='viewer.html?book='+encodeURIComponent(book.config);
-  await Promise.race([ready,delay(10000)]);
-  // The original shelf book is hidden BEFORE the flight begins: never two books.
-  shelf.hidden=true;
-  await fly('out',book);
+  // Flight and loading happen at the same time, not one after another.
+  const animation=fly('out',book);
+  await Promise.all([animation,Promise.race([ready,delay(10000)])]);
   library.classList.add('is-open');
+  clearFlight();
   transitioning=false;
 }
 async function closeBook(){
@@ -52,6 +53,7 @@ async function closeBook(){
   const book=active;
   library.classList.remove('is-open');
   await fly('back',book);
+  clearFlight();
   frame.src='about:blank';
   opened.hidden=true;
   shelf.hidden=false;
