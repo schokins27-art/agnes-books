@@ -21,18 +21,45 @@ body{font-family:Georgia,serif}
 #flight-cover{width:100%;height:100%;transform:translate(-50%,-50%);opacity:0}
 /* The horizontal spine rotates in 3D toward the portrait cover; surfaces dissolve
    while the book is tilted, avoiding the old snap from edge-on to front-on. */
-.flight-out #flight-stage{animation:book-lift 780ms cubic-bezier(.23,.67,.27,1) both}
-.flight-out #flight-spine{animation:spine-blend 780ms ease-in-out both}
-.flight-out #flight-cover{animation:cover-blend 780ms ease-in-out both}
-.flight-back #flight-stage{animation:book-lift 780ms cubic-bezier(.23,.67,.27,1) reverse both}
-.flight-back #flight-spine{animation:spine-blend 780ms ease-in-out reverse both}
-.flight-back #flight-cover{animation:cover-blend 780ms ease-in-out reverse both}
+.flight-out #flight-stage{animation:book-lift 690ms linear both}
+.flight-out #flight-spine{animation:spine-blend 690ms linear both}
+.flight-out #flight-cover{animation:cover-blend 690ms linear both}
+.flight-back #flight-stage{animation:book-lift 690ms linear reverse both}
+.flight-back #flight-spine{animation:spine-blend 690ms linear reverse both}
+.flight-back #flight-cover{animation:cover-blend 690ms linear reverse both}
+/* Extra spatial waypoints keep rotation, lifting and depth changing together.
+   The browser interpolates each interval at display refresh rate (not a frame-by-frame sprite). */
 @keyframes book-lift{
-  0%{transform:translate(-50%,-50%) translateY(38px) translateZ(-140px) rotateX(70deg) rotateZ(-90deg) scale(.70)}
-  28%{transform:translate(-50%,-50%) translateY(8px) translateZ(-45px) rotateX(54deg) rotateZ(-68deg) scale(.81)}
-  65%{transform:translate(-50%,-50%) translateY(-17px) translateZ(25px) rotateX(22deg) rotateZ(-23deg) scale(.94)}
-  100%{transform:translate(-50%,-50%) translateY(0) translateZ(0) rotateX(0deg) rotateZ(0deg) scale(1)}
+  0%  {transform:translate(-50%,-50%) translate3d(0,45px,-150px) rotateX(76deg) rotateY(-5deg) rotateZ(-87deg) scale(.66)}
+  8%  {transform:translate(-50%,-50%) translate3d(0,38px,-132px) rotateX(72deg) rotateY(-5deg) rotateZ(-82deg) scale(.69)}
+  16% {transform:translate(-50%,-50%) translate3d(0,27px,-109px) rotateX(65deg) rotateY(-4deg) rotateZ(-74deg) scale(.73)}
+  24% {transform:translate(-50%,-50%) translate3d(0,16px,-83px) rotateX(57deg) rotateY(-4deg) rotateZ(-65deg) scale(.78)}
+  32% {transform:translate(-50%,-50%) translate3d(0,6px,-57px) rotateX(49deg) rotateY(-3deg) rotateZ(-55deg) scale(.83)}
+  40% {transform:translate(-50%,-50%) translate3d(0,-2px,-30px) rotateX(41deg) rotateY(-3deg) rotateZ(-46deg) scale(.87)}
+  48% {transform:translate(-50%,-50%) translate3d(0,-8px,-6px) rotateX(33deg) rotateY(-2deg) rotateZ(-37deg) scale(.91)}
+  56% {transform:translate(-50%,-50%) translate3d(0,-12px,13px) rotateX(25deg) rotateY(-2deg) rotateZ(-28deg) scale(.95)}
+  64% {transform:translate(-50%,-50%) translate3d(0,-12px,23px) rotateX(18deg) rotateY(-1deg) rotateZ(-20deg) scale(.98)}
+  72% {transform:translate(-50%,-50%) translate3d(0,-10px,24px) rotateX(12deg) rotateY(-1deg) rotateZ(-13deg) scale(1)}
+  80% {transform:translate(-50%,-50%) translate3d(0,-7px,17px) rotateX(7deg) rotateY(0) rotateZ(-7deg) scale(1.01)}
+  90% {transform:translate(-50%,-50%) translate3d(0,-3px,7px) rotateX(3deg) rotateY(0) rotateZ(-3deg) scale(1.005)}
+  100%{transform:translate(-50%,-50%) translate3d(0,0,0) rotateX(0) rotateY(0) rotateZ(0) scale(1)}
 }
-@keyframes spine-blend{0%,27%{opacity:1}62%{opacity:0}100%{opacity:0}}
-@keyframes cover-blend{0%,27%{opacity:0}62%,100%{opacity:1}}
+@keyframes spine-blend{
+  0%,12%{opacity:1}
+  24%{opacity:.96}
+  36%{opacity:.8}
+  48%{opacity:.53}
+  60%{opacity:.25}
+  72%{opacity:.06}
+  82%,100%{opacity:0}
+}
+@keyframes cover-blend{
+  0%,12%{opacity:0}
+  24%{opacity:.04}
+  36%{opacity:.2}
+  48%{opacity:.47}
+  60%{opacity:.75}
+  72%{opacity:.94}
+  82%,100%{opacity:1}
+}
 @media(prefers-reduced-motion:reduce){#flight{display:none!important}.spine{transition:none!important}}

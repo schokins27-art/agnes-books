@@ -9,7 +9,15 @@ const flightSpine=document.getElementById('flight-spine');
 const flightCover=document.getElementById('flight-cover');
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let active=null,transitioning=false,readyResolve=null;
-const DURATION=780;
+const DURATION=690;
+// The former cover-open/close recording now belongs to shelf pickup/put-away.
+const shelfSound=new Audio('sounds/book-closing.mp3?v=10');
+shelfSound.preload='auto';shelfSound.volume=0.7;
+function playShelfSound(){
+  try {shelfSound.pause();shelfSound.currentTime=0;
+    const result=shelfSound.play();result?.catch(()=>{});
+  } catch(e) {console.warn('Shelf sound unavailable',e);}
+}
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function preload(src){const img=new Image();img.src=src;return img.decode?.().catch(()=>{})||Promise.resolve();}
 async function fly(direction,book){
@@ -25,6 +33,7 @@ async function fly(direction,book){
 async function openBook(book){
   if(active||transitioning)return;
   active=book;transitioning=true;
+  playShelfSound();
   // Prepare the actual book behind the animation. Do not reveal it before ready.
   opened.hidden=false;
   const ready=new Promise(resolve=>{readyResolve=resolve;});
@@ -39,6 +48,7 @@ async function openBook(book){
 async function closeBook(){
   if(!active||transitioning)return;
   transitioning=true;
+  playShelfSound();
   const book=active;
   library.classList.remove('is-open');
   await fly('back',book);

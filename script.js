@@ -61,13 +61,11 @@
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     const paperAudio = new Audio('sounds/page-turn.mp3?v=37');
-    const closingAudio = new Audio('sounds/book-closing.mp3?v=37');
+    // Shelf pickup/put-away uses the former cover recording in library.js.
     paperAudio.preload = 'auto';
-    closingAudio.preload = 'auto';
     paperAudio.volume = 0.8;
-    closingAudio.volume = 0.7;
     function playSound(isClosing) {
-      const audio = isClosing ? closingAudio : paperAudio;
+      const audio = paperAudio;
       try {
         audio.pause();
         audio.currentTime = 0;
