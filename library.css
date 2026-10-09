@@ -2,11 +2,16 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important}
 body{font-family:Georgia,serif}
 [hidden]{display:none!important}
-#library{width:100%;height:100%;background:transparent;position:relative;overflow:hidden}
-#shelf{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:transparent}
+#library{width:100%;height:100%;background:transparent;position:relative;overflow:hidden;perspective:1200px}
+#shelf{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:transparent;transform-origin:50% 60%;transition:opacity 650ms ease,transform 850ms cubic-bezier(.2,.7,.2,1),filter 650ms ease;will-change:opacity,transform}
 .spine{border:0;background:transparent;padding:0;cursor:pointer;display:block;width:min(94vw,calc(90vh * 2.5));max-height:90vh;line-height:0;transition:filter .2s ease,transform .2s ease;outline-offset:4px}
 .spine img{width:100%;height:auto;max-height:90vh;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
 .spine:hover{filter:brightness(1.12);transform:translateY(-3px)}
 .spine:focus-visible{outline:2px solid #d6b87e;border-radius:5px}
-#opened{position:absolute;inset:0;background:transparent}
+#opened{position:absolute;inset:0;background:transparent;opacity:0;transform:translateY(36px) scale(.83) rotateX(-8deg);transform-origin:50% 62%;pointer-events:none;transition:opacity 650ms ease,transform 850ms cubic-bezier(.2,.7,.2,1);will-change:opacity,transform}
 #book-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
+#library.is-opening #shelf,#library.is-open #shelf{opacity:0;transform:translateY(-42px) scale(1.18) rotateX(7deg);filter:blur(3px);pointer-events:none}
+#library.is-opening #opened,#library.is-open #opened{opacity:1;transform:translateY(0) scale(1) rotateX(0);pointer-events:auto}
+#library.is-closing #shelf{opacity:1;transform:translateY(0) scale(1) rotateX(0);filter:none;pointer-events:none}
+#library.is-closing #opened{opacity:0;transform:translateY(36px) scale(.83) rotateX(-8deg);pointer-events:none}
+@media(prefers-reduced-motion:reduce){#shelf,#opened{transition:none!important}.spine{transition:none!important}}
