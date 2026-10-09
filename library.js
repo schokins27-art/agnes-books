@@ -9,6 +9,8 @@ const flightSpine=document.getElementById('flight-spine');
 const flightCover=document.getElementById('flight-cover');
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let active=null,transitioning=false,readyResolve=null;
+let viewerLoaded=false,viewerLoading=false;
+let resetResolve=null;
 const DURATION=690;
 // The former cover-open/close recording now belongs to shelf pickup/put-away.
 const shelfSound=new Audio('sounds/book-closing.mp3?v=30');
@@ -64,26 +66,49 @@ async function fly(direction,book){
   // Keep the last animated frame visible until the actual viewer is ready.
 }
 function clearFlight(){flight.hidden=true;flight.className='';}
+// The iframe is created only once. Reusing the PageFlip instance avoids
+// races between an old iframe unload and a new viewer initialization.
+function waitForViewer(){
+  if(viewerLoaded)return Promise.resolve(true);
+  return new Promise(resolve=>{
+    const timeout=setTimeout(()=>{if(readyResolve===finish)readyResolve=null;resolve(false);},8000);
+    function finish(){clearTimeout(timeout);resolve(true);}
+    readyResolve=finish;
+  });
+}
+function resetViewer(){
+  if(!viewerLoaded)return Promise.resolve(false);
+  return new Promise(resolve=>{
+    const timeout=setTimeout(()=>{if(resetResolve===finish)resetResolve=null;resolve(false);},1500);
+    function finish(){clearTimeout(timeout);resolve(true);}
+    resetResolve=finish;
+    frame.contentWindow?.postMessage({type:'agnes:reset-to-cover'},location.origin);
+  });
+}
 async function openBook(book){
   if(active||transitioning)return;
-  active=book;transitioning=true;viewerGeometry=null;viewerPage='front';viewerCoverRect=null;
+  active=book;transitioning=true;
+  viewerGeometry=null;viewerPage='front';viewerTurning=false;
   playShelfSound();
-  // Immediately remove the shelf image and start the pickup animation.
   shelf.hidden=true;
-  opened.hidden=false; // The iframe must be unhidden before revealing the viewer.
-  let didResolve=false;
-  const ready=new Promise(resolve=>{
-    readyResolve=()=>{if(!didResolve){didResolve=true;resolve();}};
-  });
-  frame.src='viewer.html?book='+encodeURIComponent(book.config);
-  frame.onerror=()=>console.error('Не удалось загрузить просмотрщик книги');
-  // Flight and loading happen at the same time, not one after another.
+  opened.hidden=false;
+  // Keep the existing iframe, rather than replacing it with about:blank.
+  if(!viewerLoading){
+    viewerLoading=true;
+    frame.src='viewer.html?book='+encodeURIComponent(book.config)+'&v=75';
+  }
   const animation=fly('out',book);
-  // Never leave the user stuck behind the animated cover if the embedded
-  // viewer is slow or fails to send its readiness event.
+  const loaded=await waitForViewer();
+  if(!loaded){
+    console.error('Просмотрщик не подтвердил готовность; книга останется доступной для повторного открытия.');
+    await animation;
+    clearFlight();opened.hidden=true;shelf.hidden=false;active=null;transitioning=false;
+    return;
+  }
+  // Reset while the flight animation covers the viewer; only one PageFlip
+  // instance exists, and it is always reset before revealing the cover.
+  await resetViewer();
   await animation;
-  await Promise.race([ready,delay(400)]);
-  readyResolve=null;
   library.classList.add('is-open');
   clearFlight();
   transitioning=false;
@@ -96,11 +121,12 @@ async function closeBook(){
   library.classList.remove('is-open');
   await fly('back',book);
   clearFlight();
-  frame.src='about:blank';
+  // Do NOT navigate to about:blank. The loaded viewer remains in memory.
   opened.hidden=true;
   shelf.hidden=false;
   active=null;transitioning=false;
 }
+
 for(const book of BOOKS){
   const button=document.createElement('button');button.className='spine';button.type='button';
   button.title='Открыть: '+book.title;button.setAttribute('aria-label','Открыть: '+book.title);
@@ -110,9 +136,10 @@ for(const book of BOOKS){
 }
 window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
-  if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
+  if(event.data?.type==='agnes:viewer-ready'){viewerLoaded=true;readyResolve?.();readyResolve=null;}
+  if(event.data?.type==='agnes:reset-done'){resetResolve?.();resetResolve=null;}
   // Page-turn audio is played directly by the viewer during wheel/click.
-  if(event.data?.type==='agnes:viewer-error')console.error('Book viewer:',event.data.message);
+  if(event.data?.type==='agnes:viewer-error'){viewerLoaded=false;viewerLoading=false;console.error('Book viewer:',event.data.message);}
   if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
   if(event.data?.type==='agnes:page-state'){viewerPage=event.data.state;viewerTurning=false;layoutOutsideZones();}
   if(event.data?.type==='agnes:turn-start'){viewerTurning=true;layoutOutsideZones();}

@@ -52,6 +52,17 @@
       window.parent.postMessage({type:'agnes:page-turn'},location.origin);
     });
     reportPageState();
+    // Reset the existing PageFlip instance without reloading its iframe.
+    window.addEventListener('message',event=>{
+      if(event.origin!==location.origin || event.source!==window.parent)return;
+      if(event.data?.type!=='agnes:reset-to-cover')return;
+      clearTimeout(unlock);
+      busy=false;
+      wheelSum=0;
+      flip.turnToPage(0);
+      reportPageState();
+      window.parent.postMessage({type:'agnes:reset-done'},location.origin);
+    });
     // Clicking transparent space outside the VISIBLE pages puts the book away.
     // Closed front cover occupies the right half; closed rear cover the left.
     function outsideVisibleBook(event) {
