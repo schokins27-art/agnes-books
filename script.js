@@ -42,6 +42,13 @@
       mobileScrollSupport:false, showPageCorners:false, disableFlipByClick:true, startPage:0
     });
     flip.loadFromHTML(sheets);
+    function reportPageState(){
+      const i=flip.getCurrentPageIndex();
+      const state=i===0?'front':i>=urls.length-1?'back':'open';
+      window.parent.postMessage({type:'agnes:page-state',state},location.origin);
+    }
+    flip.on('flip',reportPageState);
+    reportPageState();
     // Clicking transparent space outside the VISIBLE pages puts the book away.
     // Closed front cover occupies the right half; closed rear cover the left.
     function outsideVisibleBook(event) {
@@ -64,8 +71,18 @@
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
     // Real recordings: cover transitions use the closing sound; inner pages use paper.
     // Play in the parent frame: the original shelf click activated audio there.
+    const pageAudio = new Audio('sounds/page-turn.mp3?v=45');
+    pageAudio.preload = 'auto';
+    pageAudio.volume = 0.85;
     function playSound() {
-      window.parent.postMessage({type:'agnes:page-turn'},location.origin);
+      // This runs inside the viewer, in the actual click/wheel gesture.
+      // The parent-frame postMessage cannot reliably unlock audio in tldraw.
+      try {
+        pageAudio.pause();
+        pageAudio.currentTime = 0;
+        const playback = pageAudio.play();
+        playback?.catch(err => console.warn('Page-turn audio blocked:', err));
+      } catch (err) { console.warn('Page-turn audio unavailable:', err); }
     }
     let busy = false;
     let unlock;
@@ -81,7 +98,7 @@
       // flipping from it closes the back cover at N-1.
       const coverTransition = (direction > 0 && (i === 0 || i >= urls.length - 3)) ||
                               (direction < 0 && (i <= 2 || i >= urls.length - 1));
-      playSound(coverTransition);
+      window.parent.postMessage({type:'agnes:page-turn'},location.origin);
       clearTimeout(unlock);
       if (direction > 0) flip.flipNext('bottom');
       else flip.flipPrev('bottom');

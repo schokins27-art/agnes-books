@@ -2,8 +2,7 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important}
 body{font-family:Georgia,serif}
 #viewer{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;background:transparent;user-select:none;-webkit-user-select:none}
-#flipbook{position:relative;flex:none;cursor:pointer;filter:drop-shadow(0 6px 9px rgba(24,15,10,.23))}
-.book-sheet{position:relative;width:100%;height:100%;background:#e7d5ae;overflow:hidden}
+#flipbook{position:relative;flex:none;cursor:pointer;width:100%;height:100%;background:#e7d5ae;overflow:hidden}
 .book-sheet img{width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
 .book-cover{background:#10253a}
 /* StPageFlip applies hard-page transforms for data-density=hard. */
@@ -13,3 +12,7 @@ body{font-family:Georgia,serif}
 /* Cover art already includes the complete binding. Never paint fake edges. */
 .book-cover{overflow:hidden;box-shadow:none!important}
 .book-cover::before,.book-cover::after{content:none!important;display:none!important}
+
+/* Keep source page pixels unfiltered; PageFlip handles page transforms. */
+.book-sheet img{filter:none!important;image-rendering:auto;transform:none;max-width:none;max-height:none}
+#flipbook{filter:none!important}

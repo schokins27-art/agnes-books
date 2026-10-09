@@ -12,7 +12,7 @@ let active=null,transitioning=false,readyResolve=null;
 const DURATION=690;
 // The former cover-open/close recording now belongs to shelf pickup/put-away.
 const shelfSound=new Audio('sounds/book-closing.mp3?v=30');
-const paperSound=new Audio('sounds/page-turn.mp3?v=30');
+const paperSound=new Audio('sounds/page-turn.mp3?v=52');
 paperSound.preload='auto';paperSound.volume=.8;
 shelfSound.preload='auto';shelfSound.volume=0.7;
 function playShelfSound(){
@@ -42,8 +42,10 @@ async function fly(direction,book){
 function clearFlight(){flight.hidden=true;flight.className='';}
 async function openBook(book){
   if(active||transitioning)return;
-  active=book;transitioning=true;viewerGeometry=null;
+  active=book;transitioning=true;viewerGeometry=null;viewerPage='front';
   playShelfSound();
+  // Prime page-turn audio during the trusted shelf click, not later in iframe.
+  try {paperSound.volume=0;paperSound.play()?.then(()=>{paperSound.pause();paperSound.currentTime=0;paperSound.volume=.8;}).catch(()=>{paperSound.volume=.8;});}catch(e){paperSound.volume=.8;}
   // Immediately remove the shelf image and start the pickup animation.
   shelf.hidden=true;
   opened.hidden=false; // The iframe must be unhidden before revealing the viewer.
@@ -88,16 +90,19 @@ window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
   if(event.data?.type==='agnes:viewer-ready'){readyResolve?.();readyResolve=null;}
   if(event.data?.type==='agnes:page-turn')playPaperSound();
+  // Playback lives in parent iframe where the initial shelf click activated audio.
   if(event.data?.type==='agnes:viewer-error')console.error('Book viewer:',event.data.message);
   if(event.data?.type==='agnes:geometry'){viewerGeometry=event.data.geometry;layoutOutsideZones();}
+  if(event.data?.type==='agnes:page-state'){viewerPage=event.data.state;layoutOutsideZones();}
   if(event.data?.type==='agnes:return-to-shelf')closeBook();
 });
 // The embedded viewer is an iframe. Transparent pixels in an iframe still
 // capture clicks, and tldraw cannot forward board clicks into this iframe.
 // Four hit regions on the parent document explicitly cover the empty margins.
 let viewerGeometry=null;
+let viewerPage='front';
 const outsideZones=[];
-for(let i=0;i<4;i++){
+for(let i=0;i<5;i++){
   const zone=document.createElement('div');
   zone.className='outside-book-zone';
   zone.setAttribute('aria-label','Убрать книгу на полку');
@@ -122,7 +127,8 @@ function layoutOutsideZones(){
     [0,0,width,Math.max(0,y)],
     [0,y,Math.max(0,x),Math.max(0,safeBookH)],
     [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
-    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)]
+    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)],
+    viewerPage==='front' ? [x+safe,y,bookW/2-safe,bookH] : viewerPage==='back' ? [x+safe+bookW/2,y,bookW/2-safe,bookH] : [0,0,0,0]
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];
