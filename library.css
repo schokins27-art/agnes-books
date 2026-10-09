@@ -2,34 +2,37 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important}
 body{font-family:Georgia,serif}
 [hidden]{display:none!important}
-#library{position:relative;width:100%;height:100%;overflow:hidden;background:transparent;perspective:1200px}
-#shelf{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.spine{border:0;background:transparent;padding:0;cursor:pointer;display:block;width:min(94vw,calc(90vh * 2.5));max-height:90vh;line-height:0;transition:filter .18s,transform .18s}
-.spine img{display:block;width:100%;height:auto;max-height:90vh;object-fit:contain;user-select:none;-webkit-user-drag:none}
-.spine:hover{filter:brightness(1.08);transform:translateY(-2px)}
-.spine:focus-visible{outline:2px solid #d6b87e;outline-offset:4px}
+#library{position:relative;width:100%;height:100%;overflow:hidden;background:transparent;perspective:1400px}
+#shelf{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;perspective:1100px}
+/* Books on the shelf are about half their former display size. */
+.spine{border:0;background:transparent;padding:0;cursor:pointer;display:block;width:min(47vw,calc(45vh * 2.5));max-height:45vh;line-height:0;transform:translate3d(0,0,0);transform-origin:50% 65%;transition:filter 220ms ease,transform 280ms cubic-bezier(.18,.8,.24,1);will-change:transform}
+.spine img{display:block;width:100%;height:auto;max-height:45vh;object-fit:contain;user-select:none;-webkit-user-drag:none}
+.spine:hover{filter:brightness(1.13) drop-shadow(0 12px 12px rgba(0,0,0,.32));transform:translate3d(0,-12px,42px) scale(1.07)}
+.spine:focus-visible{outline:2px solid #d6b87e;outline-offset:4px;transform:translate3d(0,-12px,42px) scale(1.07)}
 #opened{position:absolute;inset:0;opacity:0;pointer-events:none;background:transparent}
 #book-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
 #library.is-open #opened{opacity:1;pointer-events:auto}
 #library.is-open #shelf{display:none}
-/* Exactly ONE visible prop at a time: shelf hidden during flight, then viewer revealed. */
-#flight{position:absolute;inset:0;z-index:5;pointer-events:none;perspective:1200px}
-#flight-spine,#flight-cover{position:absolute;display:block;object-fit:contain;backface-visibility:hidden;transform-style:preserve-3d;filter:drop-shadow(0 12px 14px rgba(0,0,0,.32))}
-#flight-spine{width:min(94vw,calc(90vh * 2.5));height:auto;left:50%;top:50%;opacity:0}
-#flight-cover{width:min(42vw,calc(84vh * 720 / 1020));aspect-ratio:720/1020;left:50%;top:50%;opacity:0}
-/* A single book turns edge-on; only at that narrow point does the visible surface switch from spine to cover. */
-.flight-out #flight-spine{animation:spine-out 660ms cubic-bezier(.42,0,.58,1) both}
-.flight-out #flight-cover{animation:cover-out 660ms cubic-bezier(.42,0,.58,1) both}
-.flight-back #flight-spine{animation:spine-out 660ms cubic-bezier(.42,0,.58,1) reverse both}
-.flight-back #flight-cover{animation:cover-out 660ms cubic-bezier(.42,0,.58,1) reverse both}
-@keyframes spine-out{
-  0%{opacity:1;transform:translate(-50%,-50%) translateY(0) rotateY(0deg) scale(1)}
-  43%{opacity:1;transform:translate(-50%,-50%) translateY(-40px) rotateY(88deg) scale(.85)}
-  44%,100%{opacity:0;transform:translate(-50%,-50%) translateY(-40px) rotateY(90deg) scale(.85)}
+/* Both surfaces share one continuous lift and tilt. No discrete 90-degree swap. */
+#flight{position:absolute;inset:0;z-index:5;pointer-events:none;perspective:1400px;overflow:visible}
+#flight-stage{position:absolute;left:50%;top:50%;width:min(42vw,calc(84vh * 720 / 1020));aspect-ratio:720/1020;transform-style:preserve-3d;will-change:transform,opacity;filter:drop-shadow(0 16px 15px rgba(0,0,0,.25))}
+#flight-spine,#flight-cover{position:absolute;display:block;object-fit:contain;left:50%;top:50%;user-select:none;-webkit-user-drag:none;backface-visibility:hidden;will-change:opacity}
+#flight-spine{width:235%;height:auto;transform:translate(-50%,-50%) rotate(90deg);opacity:1}
+#flight-cover{width:100%;height:100%;transform:translate(-50%,-50%);opacity:0}
+/* The horizontal spine rotates in 3D toward the portrait cover; surfaces dissolve
+   while the book is tilted, avoiding the old snap from edge-on to front-on. */
+.flight-out #flight-stage{animation:book-lift 780ms cubic-bezier(.23,.67,.27,1) both}
+.flight-out #flight-spine{animation:spine-blend 780ms ease-in-out both}
+.flight-out #flight-cover{animation:cover-blend 780ms ease-in-out both}
+.flight-back #flight-stage{animation:book-lift 780ms cubic-bezier(.23,.67,.27,1) reverse both}
+.flight-back #flight-spine{animation:spine-blend 780ms ease-in-out reverse both}
+.flight-back #flight-cover{animation:cover-blend 780ms ease-in-out reverse both}
+@keyframes book-lift{
+  0%{transform:translate(-50%,-50%) translateY(38px) translateZ(-140px) rotateX(70deg) rotateZ(-90deg) scale(.70)}
+  28%{transform:translate(-50%,-50%) translateY(8px) translateZ(-45px) rotateX(54deg) rotateZ(-68deg) scale(.81)}
+  65%{transform:translate(-50%,-50%) translateY(-17px) translateZ(25px) rotateX(22deg) rotateZ(-23deg) scale(.94)}
+  100%{transform:translate(-50%,-50%) translateY(0) translateZ(0) rotateX(0deg) rotateZ(0deg) scale(1)}
 }
-@keyframes cover-out{
-  0%,43%{opacity:0;transform:translate(-25%,-50%) translateY(-40px) rotateY(-90deg) scale(.9)}
-  44%{opacity:1;transform:translate(-25%,-50%) translateY(-40px) rotateY(-88deg) scale(.9)}
-  100%{opacity:1;transform:translate(-25%,-50%) translateY(0) rotateY(0deg) scale(1)}
-}
+@keyframes spine-blend{0%,27%{opacity:1}62%{opacity:0}100%{opacity:0}}
+@keyframes cover-blend{0%,27%{opacity:0}62%,100%{opacity:1}}
 @media(prefers-reduced-motion:reduce){#flight{display:none!important}.spine{transition:none!important}}

@@ -9,7 +9,7 @@ const flightSpine=document.getElementById('flight-spine');
 const flightCover=document.getElementById('flight-cover');
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let active=null,transitioning=false,readyResolve=null;
-const DURATION=660;
+const DURATION=780;
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function preload(src){const img=new Image();img.src=src;return img.decode?.().catch(()=>{})||Promise.resolve();}
 async function fly(direction,book){
