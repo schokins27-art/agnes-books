@@ -42,7 +42,8 @@ async function openBook(book){
   frame.src='viewer.html?book='+encodeURIComponent(book.config);
   // Flight and loading happen at the same time, not one after another.
   const animation=fly('out',book);
-  await Promise.all([animation,Promise.race([ready,delay(10000)])]);
+  await animation;
+  await Promise.race([ready,delay(3500)]);
   library.classList.add('is-open');
   clearFlight();
   transitioning=false;
@@ -93,12 +94,14 @@ function layoutOutsideZones(){
   // Match the viewer's exact fixed PageFlip size in script.js.
   const pageW=Math.max(100,Math.floor(Math.min(width*.46,height*.86*720/1020)));
   const bookW=pageW*2, bookH=Math.round(pageW*1020/720);
-  const x=(width-bookW)/2,y=(height-bookH)/2;
+  const safe=18;
+  const x=(width-bookW)/2-safe,y=(height-bookH)/2-safe;
+  const safeBookW=bookW+2*safe,safeBookH=bookH+2*safe;
   const regions=[
     [0,0,width,Math.max(0,y)],
-    [0,y,Math.max(0,x),Math.max(0,bookH)],
-    [x+bookW,y,Math.max(0,width-x-bookW),Math.max(0,bookH)],
-    [0,y+bookH,width,Math.max(0,height-y-bookH)]
+    [0,y,Math.max(0,x),Math.max(0,safeBookH)],
+    [x+safeBookW,y,Math.max(0,width-x-safeBookW),Math.max(0,safeBookH)],
+    [0,y+safeBookH,width,Math.max(0,height-y-safeBookH)]
   ];
   outsideZones.forEach((zone,i)=>{
     const [left,top,w,h]=regions[i];

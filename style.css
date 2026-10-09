@@ -11,7 +11,7 @@ body{font-family:Georgia,serif}
 #error{position:absolute;z-index:100;max-width:80%;background:#fff2db;color:#4b291b;padding:14px;border-radius:8px;font:15px/1.5 sans-serif;text-align:center}
 
 /* Visual board thickness on hard covers: a narrow laminated edge and bevel. */
-.book-cover{overflow:visible;box-shadow:inset 0 0 0 2px rgba(220,175,94,.22),inset 0 0 9px rgba(0,0,0,.45)}
+.book-cover{overflow:hidden;box-shadow:none}
 .book-cover::after{content:"";position:absolute;z-index:5;pointer-events:none;top:2px;bottom:2px;right:0;width:7px;background:linear-gradient(to right,rgba(10,14,19,.25) 0%,#94764c 30%,#dfc89a 55%,#5d4b35 85%,rgba(10,14,19,.5) 100%);box-shadow:-2px 0 3px rgba(0,0,0,.25),2px 0 3px rgba(0,0,0,.35)}
 .book-cover::before{content:"";position:absolute;z-index:5;pointer-events:none;top:2px;bottom:2px;left:0;width:3px;background:linear-gradient(to right,#31281e,#b49a68);opacity:.8}
 

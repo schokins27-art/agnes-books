@@ -12,12 +12,14 @@
     const names = [cfg.cover, ...(cfg.pages || []), cfg.back].filter(Boolean);
     if (names.length < 4 || names.length % 2 !== 0) throw new Error('Нужно чётное количество изображений, включая обложки.');
     const urls = names.map(name => new URL(name, base).href);
-    await Promise.all(urls.map(src => new Promise((resolve,reject) => {
-      const image = new Image();
-      image.onload = resolve;
-      image.onerror = () => reject(new Error('Не загрузилась страница: ' + src));
-      image.src = src;
-    })));
+    // Only the first cover must be ready for interaction. Load remaining
+    // images progressively so opening never blocks for all diary pages.
+    await new Promise((resolve,reject)=>{
+      const image=new Image();
+      image.onload=resolve;
+      image.onerror=()=>reject(new Error('Не загрузилась обложка'));
+      image.src=urls[0];
+    });
     const w = Math.max(100, Math.floor(Math.min(innerWidth * .46, innerHeight * .86 * 720 / 1020)));
     const h = Math.round(w * 1020 / 720);
     host.style.width = `${w * 2}px`;
