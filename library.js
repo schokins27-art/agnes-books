@@ -95,7 +95,7 @@ async function openBook(book){
   // Keep the existing iframe, rather than replacing it with about:blank.
   if(!viewerLoading){
     viewerLoading=true;
-    frame.src='viewer.html?book='+encodeURIComponent(book.config)+'&v=75';
+    frame.src='viewer.html?book='+encodeURIComponent(book.config)+'&v=76';
   }
   const animation=fly('out',book);
   const loaded=await waitForViewer();
@@ -105,9 +105,7 @@ async function openBook(book){
     clearFlight();opened.hidden=true;shelf.hidden=false;active=null;transitioning=false;
     return;
   }
-  // Reset while the flight animation covers the viewer; only one PageFlip
-  // instance exists, and it is always reset before revealing the cover.
-  await resetViewer();
+  // Do not reset while opening: it can interrupt the initial PageFlip render.
   await animation;
   library.classList.add('is-open');
   clearFlight();
@@ -122,7 +120,9 @@ async function closeBook(){
   await fly('back',book);
   clearFlight();
   // Do NOT navigate to about:blank. The loaded viewer remains in memory.
-  opened.hidden=true;
+  // Reset only after the book is offscreen; keep the iframe laid out so
+  // PageFlip does not lose its dimensions when the book is reopened.
+  await resetViewer();
   shelf.hidden=false;
   active=null;transitioning=false;
 }
