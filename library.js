@@ -9,7 +9,6 @@ const flightSpine=document.getElementById('flight-spine');
 const flightCover=document.getElementById('flight-cover');
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let active=null,transitioning=false,readyResolve=null;
-let viewerSession=0;
 const DURATION=690;
 // The former cover-open/close recording now belongs to shelf pickup/put-away.
 const shelfSound=new Audio('sounds/book-closing.mp3?v=30');
@@ -76,22 +75,15 @@ async function openBook(book){
   const ready=new Promise(resolve=>{
     readyResolve=()=>{if(!didResolve){didResolve=true;resolve();}};
   });
-  frame.src='viewer.html?book='+encodeURIComponent(book.config)+'&v=77&session='+(++viewerSession);
+  frame.src='viewer.html?book='+encodeURIComponent(book.config);
   frame.onerror=()=>console.error('Не удалось загрузить просмотрщик книги');
   // Flight and loading happen at the same time, not one after another.
   const animation=fly('out',book);
-  // Wait for actual PageFlip initialization; a fixed 400 ms wait could
-  // expose a blank iframe and accumulate broken sessions.
-  const loaded=await Promise.race([ready.then(()=>true),delay(8000).then(()=>false)]);
+  // Never leave the user stuck behind the animated cover if the embedded
+  // viewer is slow or fails to send its readiness event.
   await animation;
+  await Promise.race([ready,delay(400)]);
   readyResolve=null;
-  if(!loaded){
-    console.error('Book viewer did not initialize in time');
-    clearFlight();library.classList.remove('is-open');
-    frame.removeAttribute('src');opened.hidden=true;shelf.hidden=false;
-    active=null;transitioning=false;
-    return;
-  }
   library.classList.add('is-open');
   clearFlight();
   transitioning=false;
@@ -104,7 +96,7 @@ async function closeBook(){
   library.classList.remove('is-open');
   await fly('back',book);
   clearFlight();
-  frame.removeAttribute('src');
+  frame.src='about:blank';
   opened.hidden=true;
   shelf.hidden=false;
   active=null;transitioning=false;
