@@ -68,7 +68,7 @@ async function fly(direction,book){
   // Keep the last animated frame visible until the actual viewer is ready.
 }
 function clearFlight(){flight.hidden=true;flight.className='';}
-let flip=null, bookSheets=[], bookCount=0, busy=false, unlockTimer=null;
+let flip=null, bookSheets=[], bookCount=0, busy=false, unlockTimer=null, queuedTurn=0;
 let host=document.getElementById('flipbook');
 const viewer=document.getElementById('viewer');
 const error=document.getElementById('error');
@@ -98,14 +98,25 @@ async function createViewer(book){
   });
   flip=new St.PageFlip(host,{
     width:w,height:h,size:'fixed',showCover:true,usePortrait:false,autoSize:false,
-    drawShadow:true,maxShadowOpacity:.34,flippingTime:1050,mobileScrollSupport:false,
+    drawShadow:true,maxShadowOpacity:.34,flippingTime:760,mobileScrollSupport:false,
     showPageCorners:false,disableFlipByClick:true,startPage:0
   });
   flip.loadFromHTML(bookSheets);
   bookCount=urls.length;
+  // Unlock on actual animation completion; do not silently lose a fast click.
+  flip.on('changeState',e=>{
+    if(e.data==='read'){
+      clearTimeout(unlockTimer);unlockTimer=null;
+      busy=false;
+      if(queuedTurn && active && !transitioning){
+        const direction=queuedTurn;queuedTurn=0;
+        requestAnimationFrame(()=>turnPage(direction));
+      }
+    }
+  });
 }
 function clearViewer(){
-  clearTimeout(unlockTimer);unlockTimer=null;busy=false;
+  clearTimeout(unlockTimer);unlockTimer=null;busy=false;queuedTurn=0;
   // PageFlip.destroy() changes its container DOM. Never reuse that container:
   // after the first book is closed, a second PageFlip can render into a detached node.
   if(flip){try{flip.destroy();}catch(e){console.warn('PageFlip cleanup:',e);}flip=null;}
@@ -147,14 +158,23 @@ async function closeBook(){
   active=null;transitioning=false;
 }
 function turnPage(direction){
-  if(!active||transitioning||!flip||busy)return;
+  if(!active||transitioning||!flip)return;
+  if(busy){queuedTurn=direction;return;}
   const i=flip.getCurrentPageIndex();
   if(direction>0&&i>=bookCount-2)return;
   if(direction<0&&i<=0)return;
-  busy=true;playPaperSound();
-  if(direction>0)flip.flipNext('bottom');else flip.flipPrev('bottom');
+  busy=true;queuedTurn=0;playPaperSound();
+  try{
+    if(direction>0)flip.flipNext('bottom');else flip.flipPrev('bottom');
+  }catch(err){busy=false;console.warn('Page turn:',err);return;}
   clearTimeout(unlockTimer);
-  unlockTimer=setTimeout(()=>{busy=false;},1150);
+  // Fallback if the library does not emit the completion event.
+  unlockTimer=setTimeout(()=>{
+    busy=false;unlockTimer=null;
+    if(queuedTurn && active && !transitioning){
+      const next=queuedTurn;queuedTurn=0;turnPage(next);
+    }
+  },1000);
 }
 function visibleBookHit(x,y){
   const r=host.getBoundingClientRect();

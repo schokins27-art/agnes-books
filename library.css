@@ -119,3 +119,14 @@ body{font-family:Georgia,serif}
   top:50% !important;
   transform:translateX(-50%) !important;
 }
+
+/* v103: preserve WebP proportions and avoid GPU raster caching of shelf images. */
+#shelf .spine{will-change:auto!important;filter:none;backface-visibility:visible}
+#shelf .spine img{
+  object-fit:contain!important;
+  image-rendering:auto!important;
+  transform:none!important;
+  filter:none!important;
+  backface-visibility:visible;
+}
+#shelf .spine:hover{filter:brightness(1.07)}
