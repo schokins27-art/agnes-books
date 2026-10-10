@@ -83,3 +83,9 @@ body{font-family:Georgia,serif}
 /* FIX: physical contact between visible books; no independent vertical transforms. */
 #shelf .spine[data-book="maggie"]{top:50%!important;bottom:auto!important;left:50%!important;transform:translateX(-50%)!important;}
 #shelf .spine[data-book="tommy"]{top:auto!important;bottom:calc(50% - 12px)!important;left:50%!important;transform:translateX(-50%)!important;}
+
+/* Visible leather-to-leather contact, not bookmark-to-cover contact.
+   The overlap scales with the displayed width of Maggie. */
+#shelf .spine[data-book="tommy"]{
+  bottom:calc(50% - var(--m-width) * .055)!important;
+}
