@@ -122,3 +122,15 @@ body{font-family:Georgia,serif}
 #opened{z-index:2}
 #viewer{position:absolute;inset:0}
 #flipbook{touch-action:manipulation}
+
+/* v112: contour-only hover; does not touch or re-rasterize WebP pixels. */
+.spine::after{
+  content:"";position:absolute;inset:1px;pointer-events:none;
+  border:1px solid rgba(231,192,113,.0);border-radius:22px;
+  box-shadow:none;opacity:0;transition:opacity 130ms ease-out;
+}
+.spine:hover::after,.spine:focus-visible::after{
+  opacity:1;border-color:rgba(231,192,113,.72);
+  box-shadow:0 0 8px 1px rgba(226,170,73,.32);
+}
+@media(prefers-reduced-motion:reduce){.spine::after{transition:none}}
