@@ -122,3 +122,22 @@ body{font-family:Georgia,serif}
 #opened{z-index:2}
 #viewer{position:absolute;inset:0}
 #flipbook{touch-action:manipulation}
+
+/* v110: alpha-shaped hover highlight, without filters or moving either book. */
+.spine::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:rgba(255,230,170,.14);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  opacity:0;transition:opacity 140ms ease-out;
+}
+.spine[data-book="tommy"]::after{
+  -webkit-mask-image:url("assets/tommy-spine.webp");
+  mask-image:url("assets/tommy-spine.webp");
+}
+.spine[data-book="maggie"]::after{
+  -webkit-mask-image:url("assets/maggie-spine.webp");
+  mask-image:url("assets/maggie-spine.webp");
+}
+.spine:hover::after,.spine:focus-visible::after{opacity:1}
+@media (prefers-reduced-motion:reduce){.spine::after{transition:none}}
