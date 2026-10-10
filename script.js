@@ -75,18 +75,17 @@
     // Only reveal the book after images and the page-flip engine are ready.
     window.parent.postMessage({type:'agnes:geometry',geometry:{width:w*2,height:h}},location.origin);
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
-    // Real recordings: cover transitions use the closing sound; inner pages use paper.
-    // Play in the parent frame: the original shelf click activated audio there.
-    // Play on the initiating user gesture (not on an asynchronous iframe message).
-    // Each flip gets a fresh Audio instance, avoiding the previous pause/reset race.
+    // Play the original closing recording only when the rear cover flips.
+    // Other page turns keep their original paper recording.
     const turnSoundUrl=new URL('sounds/page-turn.mp3?v=72',location.href).href;
-    const turnSoundPreload=new Audio(turnSoundUrl);
-    turnSoundPreload.preload='auto';
-    turnSoundPreload.load();
-    function playTurnSound(){
-      const sound=new Audio(turnSoundUrl);
-      sound.volume=1;
-      sound.play().catch(err=>console.warn('Page-turn audio:',err));
+    const rearCoverSoundUrl=new URL('sounds/book-closing.mp3?v=30',location.href).href;
+    for(const src of [turnSoundUrl,rearCoverSoundUrl]){
+      const preloaded=new Audio(src);preloaded.preload='auto';preloaded.load();
+    }
+    function playTurnSound(rearCover=false){
+      const sound=new Audio(rearCover?rearCoverSoundUrl:turnSoundUrl);
+      sound.volume=rearCover?0.7:1;
+      sound.play().catch(err=>console.warn('Book-turn audio:',err));
     }
     let busy = false;
     let unlock;
@@ -97,7 +96,7 @@
       if (direction < 0 && i <= 0) return;
       busy = true;
       window.parent.postMessage({type:'agnes:turn-start'},location.origin);
-      playTurnSound();
+      playTurnSound(direction>0 && i>=urls.length-3);
       // Closing the book occurs when turning onto the back cover,
       // or turning backward from the first inner spread onto the front cover.
       // In two-page mode the last open spread starts at N-3;

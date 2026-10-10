@@ -47,15 +47,21 @@ document.addEventListener('fullscreenchange',()=>{
 
 
 const DURATION=690;
-// The former cover-open/close recording now belongs to shelf pickup/put-away.
-const shelfSound=new Audio('sounds/book-closing.mp3?v=30');
+// Each movement has its own short, realistic recording. The old shelf
+// sound now plays ONLY while turning the final spread onto the rear cover.
+const pullOutSound=new Audio('sounds/book-pull-out.mp3?v=1');
+const putBackSound=new Audio('sounds/book-put-back.mp3?v=1');
+const rearCoverSound=new Audio('sounds/book-closing.mp3?v=30');
 const paperSound=new Audio('sounds/page-turn.mp3?v=71');
 paperSound.preload='auto';paperSound.volume=.8;
-shelfSound.preload='auto';shelfSound.volume=0.7;
-function playShelfSound(){
-  try {shelfSound.pause();shelfSound.currentTime=0;
-    const result=shelfSound.play();result?.catch(()=>{});
-  } catch(e) {console.warn('Shelf sound unavailable',e);}
+for(const sound of [pullOutSound,putBackSound,rearCoverSound]){
+  sound.preload='auto';sound.volume=0.7;
+}
+function playBookSound(sound){
+  try {
+    sound.pause();sound.currentTime=0;
+    const result=sound.play();result?.catch(()=>{});
+  } catch(e) {console.warn('Book sound unavailable',e);}
 }
 const AudioContextType=window.AudioContext||window.webkitAudioContext;
 let pageAudioContext=null,pageAudioBuffer=null;
@@ -166,7 +172,7 @@ function clearViewer(){
 }
 async function openBook(book){
   if(active||transitioning)return;
-  active=book;transitioning=true;playShelfSound();unlockPaperSound();
+  active=book;transitioning=true;playBookSound(pullOutSound);unlockPaperSound();
   shelf.hidden=true;opened.hidden=false;error.hidden=true;
   // Ensure every opening starts from a pristine viewer after previous destroy.
   if(!viewer.contains(host))clearViewer();
@@ -196,7 +202,7 @@ async function openBook(book){
 }
 async function closeBook(){
   if(!active||transitioning)return;
-  transitioning=true;playShelfSound();
+  transitioning=true;playBookSound(putBackSound);
   const book=active;
   library.classList.remove('is-open');
   await fly('back',book);
@@ -210,7 +216,12 @@ function turnPage(direction){
   const i=flip.getCurrentPageIndex();
   if(direction>0&&i>=bookCount-2)return;
   if(direction<0&&i<=0)return;
-  busy=true;queuedTurn=0;playPaperSound();
+  busy=true;queuedTurn=0;
+  // In showCover mode, the final open spread begins at bookCount-3.
+  // The forward flip here turns the REAR COVER, not an ordinary paper page.
+  const closesRearCover=direction>0 && i>=bookCount-3;
+  if(closesRearCover)playBookSound(rearCoverSound);
+  else playPaperSound();
   try{
     if(direction>0)flip.flipNext('bottom');else flip.flipPrev('bottom');
   }catch(err){busy=false;console.warn('Page turn:',err);return;}
