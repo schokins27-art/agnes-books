@@ -189,6 +189,7 @@ for(let i=0;i<4;i++){
     if(e.button!==0 || !active || transitioning)return;
     e.preventDefault();e.stopPropagation();closeBook();
   });
+  zone.addEventListener('click',e=>{if(active&&!transitioning){e.preventDefault();closeBook();}});
   opened.appendChild(zone);
   outsideZones.push(zone);
 }
@@ -225,7 +226,18 @@ Object.assign(pageInputLayer.style,{
   cursor:'pointer',touchAction:'manipulation'
 });
 opened.appendChild(pageInputLayer);
+// tldraw may dispatch pointerdown without a subsequent click on embedded pages.
+let lastPagePointer=0;
+pageInputLayer.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;
+  lastPagePointer=Date.now();
+  forwardPagePress(e);
+});
 pageInputLayer.addEventListener('click',e=>{
+  if(Date.now()-lastPagePointer<550)return; // avoid double-turning
+  forwardPagePress(e);
+});
+function forwardPagePress(e){
   if(!active||transitioning)return;
   const width=opened.clientWidth,height=opened.clientHeight;
   const pageW=Math.max(100,Math.floor(Math.min(width*.46,height*.86*720/1020)));
@@ -236,7 +248,7 @@ pageInputLayer.addEventListener('click',e=>{
   const y=e.clientY-opened.getBoundingClientRect().top;
   if(x<left||x>left+bookW||y<top||y>top+bookH)return;
   frame.contentWindow?.postMessage({type:'agnes:input-click',x:(x-left)/bookW},location.origin);
-});
+}
 let forwardedWheel=0;
 pageInputLayer.addEventListener('wheel',e=>{
   if(!active||transitioning)return;
