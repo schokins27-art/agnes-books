@@ -100,3 +100,8 @@ body{font-family:Georgia,serif}
 #shelf .spine[data-book="maggie"]{
   top:50%!important;
 }
+
+/* Final visual contact: move Tommy down 12px from previous -3px overlap. */
+#shelf .spine[data-book="tommy"]{
+  bottom:calc(50% - 15px)!important;
+}
