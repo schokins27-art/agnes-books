@@ -94,7 +94,18 @@ async function createViewer(book){
     if(i===0||i===urls.length-1)sheet.dataset.density='hard';
     const img=document.createElement('img');img.decoding='sync';img.loading='eager';img.src=url;
     img.alt=i===0?'Передняя обложка':i===urls.length-1?'Задняя обложка':`Страница ${i}`;
-    img.draggable=false;sheet.append(img);host.append(sheet);return sheet;
+    img.draggable=false;
+    // v113 experiment: paint interior page pixels as a background layer instead of
+    // a transformed IMG element. PageFlip still owns the same sheet and animation.
+    // Covers remain original IMG elements, untouched.
+    if(i!==0 && i!==urls.length-1){
+      const art=document.createElement('div');
+      art.className='page-art';
+      art.style.backgroundImage='url('+JSON.stringify(url)+')';
+      art.setAttribute('aria-label',img.alt);
+      sheet.append(art);
+    }else{sheet.append(img);}
+    host.append(sheet);return sheet;
   });
   flip=new St.PageFlip(host,{
     width:w,height:h,size:'fixed',showCover:true,usePortrait:false,autoSize:false,
