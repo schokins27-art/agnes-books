@@ -69,12 +69,13 @@ body{font-family:Georgia,serif}
 
 
 
-/* Two books stacked: Maggie below and slightly larger, Tommy above. */
-#shelf{display:block;isolation:isolate}
-.spine{position:absolute;left:50%;max-height:none;transform-origin:center center;}
-.spine img{max-height:none;width:100%;height:auto;object-fit:contain}
-.spine[data-book="maggie"]{z-index:1;width:min(73vw,calc(65vh * 3.3));top:50%;transform:translate(-49%,0%)}
-.spine[data-book="tommy"]{z-index:2;width:min(63vw,calc(56vh * 3.3));top:50%;transform:translate(-52%,-91%)}
-.spine[data-book="maggie"]:hover{filter:brightness(1.10) drop-shadow(0 9px 9px #0004);transform:translate(-49%,-2%)}
-.spine[data-book="tommy"]:hover{filter:brightness(1.10) drop-shadow(0 9px 9px #0004);transform:translate(-52%,-93%)}
+/* Two tightly stacked books. Images have been trimmed to their visible pixels. */
+#shelf{display:block;isolation:isolate;--m-width:min(73vw,calc(68vh * 3.3));--t-width:min(63vw,calc(59vh * 3.3));}
+.spine{position:absolute;left:50%;top:50%;max-height:none;transform-origin:center center;transition:filter 180ms ease;}
+.spine img{width:100%;height:100%;max-height:none;object-fit:fill}
+/* Maggie is deliberately thicker, despite the original narrow illustration. */
+.spine[data-book="maggie"]{z-index:1;width:var(--m-width);height:calc(var(--m-width) * .165);transform:translate(-50%,0);}
+/* Tommy's lower leather edge overlaps Maggie's top edge by a few pixels. */
+.spine[data-book="tommy"]{z-index:2;width:var(--t-width);height:calc(var(--t-width) * .283);transform:translate(-50%,-97%);}
+.spine[data-book="maggie"]:hover,.spine[data-book="tommy"]:hover{filter:brightness(1.10) drop-shadow(0 5px 5px #0004);}
 .spine:focus-visible{outline:2px solid #d6b87e}
