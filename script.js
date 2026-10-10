@@ -75,10 +75,10 @@
     // Only reveal the book after images and the page-flip engine are ready.
     window.parent.postMessage({type:'agnes:geometry',geometry:{width:w*2,height:h}},location.origin);
     window.parent.postMessage({type:'agnes:viewer-ready'},location.origin);
-    // Opening the front cover has its own sound; closing the rear cover
-    // keeps the previous closing sound, and paper turns remain unchanged.
+    // Opening either cover uses the opening sound; closing either cover
+    // uses the closing sound. Ordinary paper turns stay unchanged.
     const turnSoundUrl=new URL('sounds/page-turn.mp3?v=72',location.href).href;
-    const rearCoverSoundUrl=new URL('sounds/book-closing.mp3?v=30',location.href).href;
+    const rearCoverSoundUrl=new URL('sounds/book-closing.mp3?v=20261011-1',location.href).href;
     const frontCoverSoundUrl=new URL('sounds/book-cover-open.mp3?v=1',location.href).href;
     for(const src of [turnSoundUrl,rearCoverSoundUrl,frontCoverSoundUrl]){
       const preloaded=new Audio(src);preloaded.preload='auto';preloaded.load();
@@ -98,7 +98,11 @@
       if (direction < 0 && i <= 0) return;
       busy = true;
       window.parent.postMessage({type:'agnes:turn-start'},location.origin);
-      playTurnSound(direction>0 && i===0?'front':direction>0 && i>=urls.length-3?'rear':'page');
+      const opensCover=(direction>0 && i===0) ||
+                       (direction<0 && i>=urls.length-2);
+      const closesCover=(direction>0 && i>=urls.length-3) ||
+                        (direction<0 && i<=2);
+      playTurnSound(opensCover?'front':closesCover?'rear':'page');
       // Closing the book occurs when turning onto the back cover,
       // or turning backward from the first inner spread onto the front cover.
       // In two-page mode the last open spread starts at N-3;

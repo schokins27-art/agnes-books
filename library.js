@@ -50,7 +50,7 @@ const DURATION=690;
 // Dedicated shelf movement, front cover, rear cover, and paper sounds.
 const pullOutSound=new Audio('sounds/book-pull-out.mp3?v=1');
 const putBackSound=new Audio('sounds/book-put-back.mp3?v=1');
-const rearCoverSound=new Audio('sounds/book-closing.mp3?v=30');
+const rearCoverSound=new Audio('sounds/book-closing.mp3?v=20261011-1');
 const frontCoverSound=new Audio('sounds/book-cover-open.mp3?v=1');
 const paperSound=new Audio('sounds/page-turn.mp3?v=71');
 paperSound.preload='auto';paperSound.volume=.8;
@@ -217,12 +217,16 @@ function turnPage(direction){
   if(direction>0&&i>=bookCount-2)return;
   if(direction<0&&i<=0)return;
   busy=true;queuedTurn=0;
-  // In showCover mode, the final open spread begins at bookCount-3.
-  // The forward flip here turns the REAR COVER, not an ordinary paper page.
-  const opensFrontCover=direction>0 && i===0;
-  const closesRearCover=direction>0 && i>=bookCount-3;
-  if(opensFrontCover)playBookSound(frontCoverSound);
-  else if(closesRearCover)playBookSound(rearCoverSound);
+  // A cover sounds the same from either end of the book:
+  // opening front (forward) or rear (backward) -> opening sound;
+  // closing rear (forward) or front (backward) -> closing sound.
+  // PageFlip in showCover mode displays a single cover at each end.
+  const opensCover=(direction>0 && i===0) ||
+                   (direction<0 && i>=bookCount-2);
+  const closesCover=(direction>0 && i>=bookCount-3) ||
+                    (direction<0 && i<=2);
+  if(opensCover)playBookSound(frontCoverSound);
+  else if(closesCover)playBookSound(rearCoverSound);
   else playPaperSound();
   try{
     if(direction>0)flip.flipNext('bottom');else flip.flipPrev('bottom');
