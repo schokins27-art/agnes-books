@@ -126,7 +126,7 @@ body{font-family:Georgia,serif}
 /* v115 test: fullscreen affects only the opened state, not the shelf widget. */
 #library:fullscreen{
   width:100vw;height:100vh;
-  background:rgba(9,13,22,.94)!important;
+  background:radial-gradient(ellipse at 50% 42%, #344258 0%, #232e42 40%, #151e2d 75%, #0c1420 100%)!important;
   overflow:hidden;
 }
 #library:fullscreen #opened{inset:0}
