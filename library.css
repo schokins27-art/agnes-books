@@ -169,3 +169,24 @@ body{font-family:Georgia,serif}
 }
 /* Smooth interpolation for page photographs and lettering. */
 .book-sheet img {image-rendering:auto!important;filter:none!important;}
+
+/* v107: visible spine contact and stable hover rasterization. */
+#shelf .spine[data-book="tommy"] {
+  bottom:calc(50% - 8px)!important;
+  transform:translateX(-50%)!important;
+}
+#shelf .spine,
+#shelf .spine:hover,
+#shelf .spine:focus-visible {
+  filter:none!important;
+  transition:none!important;
+  will-change:auto!important;
+}
+#shelf .spine:hover,
+#shelf .spine:focus-visible {
+  transform:translateX(-50%)!important;
+}
+#shelf .spine[data-book="tommy"]:hover,
+#shelf .spine[data-book="tommy"]:focus-visible {
+  transform:translateX(-50%)!important;
+}
