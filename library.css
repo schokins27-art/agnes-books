@@ -73,8 +73,8 @@ body{font-family:Georgia,serif}
 #shelf{display:block;isolation:isolate}
 .spine{position:absolute;left:50%;max-height:none;transform-origin:center center;}
 .spine img{max-height:none;width:100%;height:auto;object-fit:contain}
-.spine[data-book="maggie"]{z-index:1;width:min(73vw,calc(65vh * 3.3));top:54%;transform:translate(-49%,-10%)}
-.spine[data-book="tommy"]{z-index:2;width:min(63vw,calc(56vh * 3.3));top:47%;transform:translate(-52%,-60%)}
-.spine[data-book="maggie"]:hover{filter:brightness(1.10) drop-shadow(0 9px 9px #0004);transform:translate(-49%,-14%)}
-.spine[data-book="tommy"]:hover{filter:brightness(1.10) drop-shadow(0 9px 9px #0004);transform:translate(-52%,-64%)}
+.spine[data-book="maggie"]{z-index:1;width:min(73vw,calc(65vh * 3.3));top:50%;transform:translate(-49%,0%)}
+.spine[data-book="tommy"]{z-index:2;width:min(63vw,calc(56vh * 3.3));top:50%;transform:translate(-52%,-91%)}
+.spine[data-book="maggie"]:hover{filter:brightness(1.10) drop-shadow(0 9px 9px #0004);transform:translate(-49%,-2%)}
+.spine[data-book="tommy"]:hover{filter:brightness(1.10) drop-shadow(0 9px 9px #0004);transform:translate(-52%,-93%)}
 .spine:focus-visible{outline:2px solid #d6b87e}
