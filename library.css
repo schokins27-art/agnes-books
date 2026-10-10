@@ -188,3 +188,46 @@ body{font-family:Georgia,serif}
 #library:fullscreen #opened{inset:0}
 #library:fullscreen #viewer{width:100%;height:100%}
 #library:fullscreen #flight-stage{filter:none}
+
+/* v118: only a few additional stars gently breathe above the static sky.
+   No image filters, transforms, canvas, or animated book layers. */
+#library:fullscreen::before,
+#library:fullscreen::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background-repeat:no-repeat;
+  background-size:100% 100%;
+  opacity:.32;
+}
+#library:fullscreen::before{
+  background-image:
+    radial-gradient(circle 1.1px at 8% 18%, rgba(255,234,190,.9) 0 80%, transparent 100%),
+    radial-gradient(circle 1.4px at 22% 71%, rgba(221,234,255,.9) 0 80%, transparent 100%),
+    radial-gradient(circle 1.1px at 78% 16%, rgba(255,234,190,.85) 0 80%, transparent 100%),
+    radial-gradient(circle 1.3px at 91% 63%, rgba(221,234,255,.9) 0 80%, transparent 100%);
+  animation:agnes-stars-breathe-a 23s ease-in-out infinite;
+}
+#library:fullscreen::after{
+  background-image:
+    radial-gradient(circle 1.2px at 14% 48%, rgba(221,234,255,.85) 0 80%, transparent 100%),
+    radial-gradient(circle 1.1px at 36% 9%, rgba(255,234,190,.85) 0 80%, transparent 100%),
+    radial-gradient(circle 1.4px at 72% 83%, rgba(255,234,190,.9) 0 80%, transparent 100%),
+    radial-gradient(circle 1.1px at 96% 29%, rgba(221,234,255,.9) 0 80%, transparent 100%);
+  animation:agnes-stars-breathe-b 29s ease-in-out infinite;
+}
+@keyframes agnes-stars-breathe-a{
+  0%,22%,100%{opacity:.24}
+  42%{opacity:.78}
+  64%,85%{opacity:.26}
+}
+@keyframes agnes-stars-breathe-b{
+  0%,36%,100%{opacity:.28}
+  56%{opacity:.77}
+  76%{opacity:.3}
+}
+@media(prefers-reduced-motion:reduce){
+  #library:fullscreen::before,#library:fullscreen::after{animation:none;opacity:.45}
+}
