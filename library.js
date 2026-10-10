@@ -215,6 +215,38 @@ function layoutOutsideZones(){
     Object.assign(zone.style,{left:left+'px',top:top+'px',width:w+'px',height:h+'px'});
   });
 }
+// tldraw can deliver clicks to the library iframe but not to the nested
+// viewer iframe. An invisible interaction layer in the library document
+// forwards click and wheel events to the viewer without moving the books.
+const pageInputLayer=document.createElement('div');
+pageInputLayer.setAttribute('aria-label','Листать книгу: нажмите на край страницы');
+Object.assign(pageInputLayer.style,{
+  position:'absolute',inset:'0',zIndex:'3',background:'transparent',
+  cursor:'pointer',touchAction:'manipulation'
+});
+opened.appendChild(pageInputLayer);
+pageInputLayer.addEventListener('click',e=>{
+  if(!active||transitioning)return;
+  const width=opened.clientWidth,height=opened.clientHeight;
+  const pageW=Math.max(100,Math.floor(Math.min(width*.46,height*.86*720/1020)));
+  const bookW=viewerGeometry?.width??pageW*2;
+  const bookH=viewerGeometry?.height??Math.round(pageW*1020/720);
+  const left=(width-bookW)/2,top=(height-bookH)/2;
+  const x=e.clientX-opened.getBoundingClientRect().left;
+  const y=e.clientY-opened.getBoundingClientRect().top;
+  if(x<left||x>left+bookW||y<top||y>top+bookH)return;
+  frame.contentWindow?.postMessage({type:'agnes:input-click',x:(x-left)/bookW},location.origin);
+});
+let forwardedWheel=0;
+pageInputLayer.addEventListener('wheel',e=>{
+  if(!active||transitioning)return;
+  e.preventDefault();e.stopPropagation();
+  forwardedWheel+=e.deltaY;
+  if(Math.abs(forwardedWheel)>=45){
+    frame.contentWindow?.postMessage({type:'agnes:input-wheel',delta:forwardedWheel},location.origin);
+    forwardedWheel=0;
+  }
+},{passive:false});
 window.addEventListener('resize',layoutOutsideZones);
 new ResizeObserver(layoutOutsideZones).observe(opened);
 layoutOutsideZones();

@@ -109,6 +109,26 @@
       else flip.flipPrev('bottom');
       unlock = setTimeout(() => {busy = false;reportPageState();}, 1150);
     };
+    // Parent-library overlay relays input when tldraw does not deliver
+    // mouse events into a second (nested) iframe.
+    window.addEventListener('message',event=>{
+      if(event.origin!==location.origin || event.source!==window.parent)return;
+      if(event.data?.type==='agnes:input-click'){
+        const x=Number(event.data.x);
+        if(!Number.isFinite(x))return;
+        const i=flip.getCurrentPageIndex();
+        if(i===0 && x<.45){window.parent.postMessage({type:'agnes:return-to-shelf'},location.origin);return;}
+        if(i>=urls.length-2 && x>.55){window.parent.postMessage({type:'agnes:return-to-shelf'},location.origin);return;}
+        if(i===0 && x>=.45)turn(1);
+        else if(i>=urls.length-2 && x<=.55)turn(-1);
+        else if(x>=.70)turn(1);
+        else if(x<=.30)turn(-1);
+      }
+      if(event.data?.type==='agnes:input-wheel'){
+        const delta=Number(event.data.delta);
+        if(Number.isFinite(delta)&&delta!==0)turn(Math.sign(delta));
+      }
+    });
     host.addEventListener('click', event => {
       const rect = host.getBoundingClientRect();
       const x = (event.clientX - rect.left)/rect.width;
