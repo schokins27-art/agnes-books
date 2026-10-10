@@ -136,4 +136,36 @@ body{font-family:Georgia,serif}
 #shelf .spine[data-book="maggie"]{top:50%!important;transform:translate(-50%,0)!important;}
 #shelf .spine img{object-fit:contain!important;}
 /* Improve text contrast on downsized pages without scaling the entire viewer. */
-.book-sheet img{image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;}
+.book-sheet img{image-rendering:auto!important;}
+
+/* v105: Keep the opened book within its embed, with smooth source sampling. */
+#viewer{overflow:hidden!important}
+.book-sheet img{image-rendering:auto!important}
+
+/* v106: Align actual rendered spine edges, not empty fixed-height boxes. */
+#shelf .spine[data-book="tommy"],
+#shelf .spine[data-book="maggie"] {
+  height:auto!important;
+  max-height:none!important;
+  min-height:0!important;
+}
+#shelf .spine[data-book="tommy"] {
+  top:auto!important;
+  bottom:50%!important;
+  transform:translateX(-50%)!important;
+}
+#shelf .spine[data-book="maggie"] {
+  top:50%!important;
+  bottom:auto!important;
+  transform:translateX(-50%)!important;
+}
+#shelf .spine img {
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  image-rendering:auto!important;
+}
+/* Smooth interpolation for page photographs and lettering. */
+.book-sheet img {image-rendering:auto!important;filter:none!important;}
