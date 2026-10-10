@@ -121,25 +121,38 @@ for(const book of BOOKS){
   // steal clicks from the lower book.
   const hitCanvas=document.createElement('canvas');const hitCtx=hitCanvas.getContext('2d',{willReadFrequently:true});
   img.addEventListener('load',()=>{hitCanvas.width=img.naturalWidth;hitCanvas.height=img.naturalHeight;hitCtx.drawImage(img,0,0);});
-  button.addEventListener('pointerdown',e=>{
-    if(e.button!==0)return;
+  // Use the standard click event: embedded boards may forward a click
+  // without forwarding the original pointerdown event.
+  button.addEventListener('click',e=>{
+    if(e.button !== 0 && e.detail !== 0)return;
     const rect=img.getBoundingClientRect();
+    if(!rect.width || !rect.height)return;
     const x=Math.floor((e.clientX-rect.left)/rect.width*hitCanvas.width);
     const y=Math.floor((e.clientY-rect.top)/rect.height*hitCanvas.height);
-    if(!hitCanvas.width||!hitCanvas.height||x<0||y<0||x>=hitCanvas.width||y>=hitCanvas.height)return;
-    const alpha=hitCtx.getImageData(x,y,1,1).data[3];
+    // Keyboard activation (Enter/Space) has detail=0 and no reliable pointer coordinates.
+    if(e.detail===0){openBook(book);return;}
+    if(!hitCanvas.width||!hitCanvas.height){openBook(book);return;}
+    if(x<0||y<0||x>=hitCanvas.width||y>=hitCanvas.height)return;
+    let alpha=255;
+    try{alpha=hitCtx.getImageData(x,y,1,1).data[3];}
+    catch(err){console.warn('Spine alpha lookup unavailable',err);}
     if(alpha<35){
-      // Find a visible lower book at this same point, if any.
-      const buttons=[...shelf.querySelectorAll('.spine')];
-      for(const other of buttons.reverse()){
+      // A transparent part of Tommy's image may sit over Maggie's visible spine.
+      for(const other of [...shelf.querySelectorAll('.spine')].reverse()){
         if(other===button)continue;
-        const otherImg=other.querySelector('img');const r=otherImg.getBoundingClientRect();
-        if(e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom){
-          const otherCanvas=other._hitCanvas;
-          if(otherCanvas?.width){const px=Math.floor((e.clientX-r.left)/r.width*otherCanvas.width),py=Math.floor((e.clientY-r.top)/r.height*otherCanvas.height);
-            if(px>=0&&py>=0&&px<otherCanvas.width&&py<otherCanvas.height&&other._hitCtx.getImageData(px,py,1,1).data[3]>=35){e.preventDefault();openBook(BOOKS.find(b=>b.id===other.dataset.book));return;}
+        const otherImg=other.querySelector('img');
+        const r=otherImg.getBoundingClientRect();
+        if(e.clientX<r.left||e.clientX>=r.right||e.clientY<r.top||e.clientY>=r.bottom)continue;
+        const canvas=other._hitCanvas;
+        if(!canvas?.width||!canvas?.height)continue;
+        const px=Math.floor((e.clientX-r.left)/r.width*canvas.width);
+        const py=Math.floor((e.clientY-r.top)/r.height*canvas.height);
+        if(px<0||py<0||px>=canvas.width||py>=canvas.height)continue;
+        try{
+          if(other._hitCtx.getImageData(px,py,1,1).data[3]>=35){
+            e.preventDefault();openBook(BOOKS.find(b=>b.id===other.dataset.book));return;
           }
-        }
+        }catch(err){console.warn('Lower spine alpha lookup unavailable',err);}
       }
       return;
     }
