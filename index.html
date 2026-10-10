@@ -2,15 +2,16 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Книги Агнес</title><link rel="stylesheet" href="library.css?v=79">
+<title>Книги Агнес</title><link rel="stylesheet" href="library.css?v=100">
 </head>
 <body>
 <main id="library" aria-label="Книги Агнес">
   <div id="shelf" aria-label="Выберите книгу"></div>
   <div id="flight" hidden aria-hidden="true"><div id="flight-stage"><img id="flight-spine" alt=""><img id="flight-cover" alt=""></div></div>
   <section id="opened" hidden aria-label="Открытая книга">
-    <iframe id="book-frame" title="Просмотр книги" allow="autoplay" loading="eager"></iframe>
+    <div id="viewer"><div id="flipbook" aria-label="Интерактивная книга"></div><div id="error" role="alert" hidden></div></div>
   </section>
 </main>
-<script src="library.js?v=91"></script>
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+<script src="library.js?v=100"></script>
 </body></html>
