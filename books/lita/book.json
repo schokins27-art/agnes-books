@@ -1,0 +1,10 @@
+{
+  "title": "Book of Lita",
+  "cover": "cover.webp",
+  "back": "back.webp",
+  "pages": [
+    "endpaper-front.webp",
+    "endpaper-back.webp"
+  ],
+  "startClosed": true
+}
