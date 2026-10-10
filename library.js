@@ -1,6 +1,7 @@
 /* Add books here later: each book has its own spine image, cover and viewer config. */
 const BOOKS=[
  {id:'maggie',title:'Book of Maggie',image:'assets/maggie-spine.webp',cover:'books/maggie/cover.webp',config:'books/maggie/book.json'},
+ {id:'lita',title:'Book of Lita',image:'assets/lita-spine.webp',cover:'books/lita/cover.webp',config:'books/lita/book.json'},
  {id:'tommy',title:'Book of Tommy',image:'assets/tommy-spine.webp',cover:'books/tommy/cover.webp',config:'books/tommy/book.json'}
 ];
 const library=document.getElementById('library');

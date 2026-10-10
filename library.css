@@ -71,8 +71,10 @@ body{font-family:Georgia,serif}
   position:absolute;inset:0;display:flex;flex-direction:column;
   justify-content:center;align-items:center;gap:0;
   isolation:isolate;perspective:none;
-  --m-width:min(73vw,calc(68vh * 3.3));
-  --t-width:min(63vw,calc(59vh * 3.3));
+  /* Three horizontal books, fitted to the shelf and touching edge-to-edge. */
+  --m-width:min(73vw,calc(52vh * 3.3));
+  --t-width:min(63vw,calc(45vh * 3.3));
+  --l-width:min(69vw,calc(49vh * 3.3));
 }
 .spine{
   position:relative;display:block;flex:0 0 auto;line-height:0;
@@ -81,12 +83,14 @@ body{font-family:Georgia,serif}
   transform:none;filter:none;transition:none;will-change:auto;
   -webkit-tap-highlight-color:transparent;
 }
-.spine[data-book="tommy"]{order:0;width:var(--t-width);z-index:2}
-/* Compensate only for real alpha padding: Tommy bottom ~6/2155,
-   Maggie top ~9/2077. Both terms scale with their own rendered widths. */
+.spine[data-book="tommy"]{order:0;width:var(--t-width);z-index:3}
+.spine[data-book="lita"]{
+  order:1;width:var(--l-width);z-index:2;
+  margin-top:calc(-1 * (var(--t-width) * .0028 + var(--l-width) * .003));
+}
 .spine[data-book="maggie"]{
-  order:1;width:var(--m-width);z-index:1;
-  margin-top:calc(-1 * (var(--t-width) * .0028 + var(--m-width) * .0043));
+  order:2;width:var(--m-width);z-index:1;
+  margin-top:calc(-1 * (var(--l-width) * .003 + var(--m-width) * .0043));
 }
 .spine img{
   display:block;width:100%;height:auto;max-height:none;
