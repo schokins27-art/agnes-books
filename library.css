@@ -74,7 +74,7 @@ body{font-family:Georgia,serif}
   /* Three horizontal books, fitted to the shelf and touching edge-to-edge. */
   --m-width:min(73vw,calc(52vh * 3.3));
   --t-width:min(63vw,calc(45vh * 3.3));
-  --l-width:min(69vw,calc(49vh * 3.3));
+  --l-width:var(--m-width);
 }
 .spine{
   position:relative;display:block;flex:0 0 auto;line-height:0;
@@ -86,11 +86,11 @@ body{font-family:Georgia,serif}
 .spine[data-book="tommy"]{order:0;width:var(--t-width);z-index:3}
 .spine[data-book="lita"]{
   order:1;width:var(--l-width);z-index:2;
-  margin-top:calc(-1 * (var(--t-width) * .0028 + var(--l-width) * .003));
+  margin-top:calc(-1 * (var(--t-width) * .005 + var(--l-width) * .007));
 }
 .spine[data-book="maggie"]{
   order:2;width:var(--m-width);z-index:1;
-  margin-top:calc(-1 * (var(--l-width) * .003 + var(--m-width) * .0043));
+  margin-top:calc(-1 * (var(--l-width) * .006 + var(--m-width) * .006));
 }
 .spine img{
   display:block;width:100%;height:auto;max-height:none;
