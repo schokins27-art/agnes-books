@@ -80,35 +80,22 @@ body{font-family:Georgia,serif}
 .spine[data-book="maggie"]:hover,.spine[data-book="tommy"]:hover{filter:brightness(1.10) drop-shadow(0 5px 5px #0004);}
 .spine:focus-visible{outline:2px solid #d6b87e}
 
-/* FIX: physical contact between visible books; no independent vertical transforms. */
-#shelf .spine[data-book="maggie"]{top:50%!important;bottom:auto!important;left:50%!important;transform:translateX(-50%)!important;}
-#shelf .spine[data-book="tommy"]{top:auto!important;bottom:calc(50% - 12px)!important;left:50%!important;transform:translateX(-50%)!important;}
-
-/* Visible leather-to-leather contact, not bookmark-to-cover contact.
-   The overlap scales with the displayed width of Maggie. */
-#shelf .spine[data-book="tommy"]{
-  bottom:calc(50% - var(--m-width) * .055)!important;
+/* Book stack: no forced overlap; Tommy meets Maggie at the shared 50% edge. */
+#shelf .spine[data-book="maggie"] {
+  position: absolute;
+  left: 50%;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+  z-index: 1;
 }
-
-/* 2026-10-10: new Tommy spine is 2155x258. Do not stretch to old .283 ratio.
-   Position by visible leather edges, leaving a 3px overlap only. */
-#shelf .spine[data-book="tommy"]{
-  height:calc(var(--t-width) * 258 / 2155)!important;
-  bottom:calc(50% - 3px)!important;
-  top:auto!important;
-}
-#shelf .spine[data-book="maggie"]{
-  top:50%!important;
-}
-
-/* Final visual contact: move Tommy down 12px from previous -3px overlap. */
-#shelf .spine[data-book="tommy"]{
-  bottom:calc(50% - 15px)!important;
-}
-
-/* Book of Tommy: lower by 14px; keeps both original clickable buttons. */
 #shelf .spine[data-book="tommy"] {
-  transform: translate(-50%, calc(-97% + 14px));
+  position: absolute;
+  left: 50%;
+  top: auto !important;
+  bottom: 50% !important;
+  height: calc(var(--t-width) * 258 / 2155) !important;
+  transform: translateX(-50%) !important;
   z-index: 2;
 }
-#shelf .spine[data-book="maggie"] { z-index: 1; }
+/* The upper book receives clicks only within its own element. */
