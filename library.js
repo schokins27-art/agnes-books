@@ -187,35 +187,18 @@ for(const book of BOOKS){
   button.title='Открыть: '+book.title;button.setAttribute('aria-label','Открыть: '+book.title);
   const img=document.createElement('img');img.src=book.image;img.alt=book.title;img.draggable=false;
   button.append(img);
-  // Pixel-accurate clicks: transparent areas of the upper book do not
-  // steal clicks from the lower book.
-  const hitCanvas=document.createElement('canvas');const hitCtx=hitCanvas.getContext('2d',{willReadFrequently:true});
-  img.addEventListener('load',()=>{hitCanvas.width=img.naturalWidth;hitCanvas.height=img.naturalHeight;hitCtx.drawImage(img,0,0);});
-  button.addEventListener('pointerdown',e=>{
-    if(e.button!==0)return;
-    const rect=img.getBoundingClientRect();
-    const x=Math.floor((e.clientX-rect.left)/rect.width*hitCanvas.width);
-    const y=Math.floor((e.clientY-rect.top)/rect.height*hitCanvas.height);
-    if(!hitCanvas.width||!hitCanvas.height||x<0||y<0||x>=hitCanvas.width||y>=hitCanvas.height)return;
-    const alpha=hitCtx.getImageData(x,y,1,1).data[3];
-    if(alpha<35){
-      // Find a visible lower book at this same point, if any.
-      const buttons=[...shelf.querySelectorAll('.spine')];
-      for(const other of buttons.reverse()){
-        if(other===button)continue;
-        const otherImg=other.querySelector('img');const r=otherImg.getBoundingClientRect();
-        if(e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom){
-          const otherCanvas=other._hitCanvas;
-          if(otherCanvas?.width){const px=Math.floor((e.clientX-r.left)/r.width*otherCanvas.width),py=Math.floor((e.clientY-r.top)/r.height*otherCanvas.height);
-            if(px>=0&&py>=0&&px<otherCanvas.width&&py<otherCanvas.height&&other._hitCtx.getImageData(px,py,1,1).data[3]>=35){e.preventDefault();openBook(BOOKS.find(b=>b.id===other.dataset.book));return;}
-          }
-        }
-      }
-      return;
-    }
-    e.preventDefault();openBook(book);
-  });
-  button.dataset.book=book.id;button._hitCanvas=hitCanvas;button._hitCtx=hitCtx;
+  button.dataset.book=book.id;
+  let handledAt=0;
+  function activate(e){
+    if(e.type==='pointerdown' && e.button!==0)return;
+    if(e.type==='click' && Date.now()-handledAt<500)return;
+    if(active||transitioning)return;
+    handledAt=Date.now();
+    e.preventDefault();e.stopPropagation();
+    openBook(book);
+  }
+  button.addEventListener('pointerdown',activate);
+  button.addEventListener('click',activate);
   shelf.append(button);
   preload(book.cover);
 }

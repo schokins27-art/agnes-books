@@ -107,3 +107,15 @@ body{font-family:Georgia,serif}
 #opened{z-index:2}
 #viewer{position:absolute;inset:0}
 #flipbook{touch-action:manipulation}
+
+/* v101: preserve original slender Tommy spine and touch the Maggie spine. */
+#shelf .spine[data-book="tommy"]{
+  height:calc(var(--t-width) * .120) !important;
+  bottom:calc(50% - 2px) !important;
+  top:auto !important;
+  transform:translateX(-50%) !important;
+}
+#shelf .spine[data-book="maggie"]{
+  top:50% !important;
+  transform:translateX(-50%) !important;
+}
