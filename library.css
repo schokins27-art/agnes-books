@@ -89,3 +89,14 @@ body{font-family:Georgia,serif}
 #shelf .spine[data-book="tommy"]{
   bottom:calc(50% - var(--m-width) * .055)!important;
 }
+
+/* 2026-10-10: new Tommy spine is 2155x258. Do not stretch to old .283 ratio.
+   Position by visible leather edges, leaving a 3px overlap only. */
+#shelf .spine[data-book="tommy"]{
+  height:calc(var(--t-width) * 258 / 2155)!important;
+  bottom:calc(50% - 3px)!important;
+  top:auto!important;
+}
+#shelf .spine[data-book="maggie"]{
+  top:50%!important;
+}
