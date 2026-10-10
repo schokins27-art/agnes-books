@@ -68,6 +68,32 @@ async function fly(direction,book){
   // Keep the last animated frame visible until the actual viewer is ready.
 }
 function clearFlight(){flight.hidden=true;flight.className='';}
+// Timing diagnostic: press T while the book is open to show/hide the overlay.
+// Does not change PageFlip settings, animation, pointer events, or book layout.
+let timingStart=0,timingLast=null,timingFrame=0,timingFrames=0,timingOpen=false;
+const timingPanel=document.createElement('div');
+timingPanel.id='timing-diagnostic';
+Object.assign(timingPanel.style,{
+  position:'fixed',top:'8px',left:'8px',zIndex:'99999',
+  padding:'8px 11px',borderRadius:'5px',background:'rgba(9,15,25,.9)',
+  color:'#fff',font:'12px/1.5 monospace',whiteSpace:'pre-line',
+  pointerEvents:'none',display:'none',maxWidth:'min(92vw,350px)'
+});
+document.body.append(timingPanel);
+function timingPaint(message){
+  if(!timingOpen)return;
+  const rect=host.getBoundingClientRect();
+  const dpr=window.devicePixelRatio;
+  timingPanel.textContent='PageFlip timing (T — скрыть)\\n'+
+    'Книга: '+Math.round(rect.width)+'×'+Math.round(rect.height)+' CSS px; DPR '+dpr+'\\n'+
+    'Настройка: 1050 мс\\n'+message;
+}
+document.addEventListener('keydown',e=>{
+  if(e.key.toLowerCase()==='t' && !e.ctrlKey && !e.altKey && !e.metaKey){
+    timingOpen=!timingOpen;timingPanel.style.display=timingOpen?'block':'none';
+    timingPaint(timingLast===null?'Перелистни одну страницу':`Последний переворот: ${Math.round(timingLast)} мс`);
+  }
+});
 let flip=null, bookSheets=[], bookCount=0, busy=false, unlockTimer=null, queuedTurn=0;
 let host=document.getElementById('flipbook');
 const viewer=document.getElementById('viewer');
@@ -106,6 +132,14 @@ async function createViewer(book){
   // Unlock on actual animation completion; do not silently lose a fast click.
   flip.on('changeState',e=>{
     if(e.data==='read'){
+      if(timingStart){
+        timingLast=performance.now()-timingStart;
+        timingStart=0;
+        const result='Фактически: '+Math.round(timingLast)+' мс; кадров: '+timingFrames;
+        console.info('[Book timing]',result,'viewport',window.innerWidth,window.innerHeight);
+        timingPaint(result);
+      }
+
       clearTimeout(unlockTimer);unlockTimer=null;
       busy=false;
       if(queuedTurn && active && !transitioning){
@@ -164,12 +198,22 @@ function turnPage(direction){
   if(direction>0&&i>=bookCount-2)return;
   if(direction<0&&i<=0)return;
   busy=true;queuedTurn=0;playPaperSound();
+  timingStart=performance.now();timingFrames=0;
+  const tick=()=>{if(!timingStart)return;timingFrames++;requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);
+  timingPaint('Перелистывание…');
+
   try{
     if(direction>0)flip.flipNext('bottom');else flip.flipPrev('bottom');
   }catch(err){busy=false;console.warn('Page turn:',err);return;}
   clearTimeout(unlockTimer);
   // Fallback if the library does not emit the completion event.
   unlockTimer=setTimeout(()=>{
+    if(timingStart){
+      timingLast=performance.now()-timingStart;
+      timingStart=0;
+      timingPaint('Таймаут: '+Math.round(timingLast)+' мс (нет события завершения)');
+    }
     busy=false;unlockTimer=null;
     if(queuedTurn && active && !transitioning){
       const next=queuedTurn;queuedTurn=0;turnPage(next);
