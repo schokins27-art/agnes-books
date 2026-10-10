@@ -4,6 +4,8 @@
   "back": "back.webp",
   "pages": [
     "endpaper-front.webp",
+    "page-01.webp",
+    "page-08.webp",
     "endpaper-back.webp"
   ],
   "startClosed": true
