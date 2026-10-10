@@ -79,3 +79,7 @@ body{font-family:Georgia,serif}
 .spine[data-book="tommy"]{z-index:2;width:var(--t-width);height:calc(var(--t-width) * .283);transform:translate(-50%,-97%);}
 .spine[data-book="maggie"]:hover,.spine[data-book="tommy"]:hover{filter:brightness(1.10) drop-shadow(0 5px 5px #0004);}
 .spine:focus-visible{outline:2px solid #d6b87e}
+
+/* FIX: physical contact between visible books; no independent vertical transforms. */
+#shelf .spine[data-book="maggie"]{top:50%!important;bottom:auto!important;left:50%!important;transform:translateX(-50%)!important;}
+#shelf .spine[data-book="tommy"]{top:auto!important;bottom:calc(50% - 12px)!important;left:50%!important;transform:translateX(-50%)!important;}
