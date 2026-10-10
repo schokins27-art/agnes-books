@@ -1,0 +1,16 @@
+{
+  "title": "Book of Maggie",
+  "cover": "cover.webp",
+  "back": "back.webp",
+  "pages": [
+    "endpaper-front.webp",
+    "page-01.webp",
+    "page-02.webp",
+    "page-03.webp",
+    "page-04.webp",
+    "page-05.webp",
+    "page-06.webp",
+    "endpaper-back.webp"
+  ],
+  "startClosed": true
+}
