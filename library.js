@@ -92,13 +92,13 @@ async function createViewer(book){
     const sheet=document.createElement('div');
     sheet.className='book-sheet'+((i===0||i===urls.length-1)?' book-cover':'');
     if(i===0||i===urls.length-1)sheet.dataset.density='hard';
-    const img=document.createElement('img');img.src=url;
+    const img=document.createElement('img');img.decoding='sync';img.loading='eager';img.src=url;
     img.alt=i===0?'Передняя обложка':i===urls.length-1?'Задняя обложка':`Страница ${i}`;
     img.draggable=false;sheet.append(img);host.append(sheet);return sheet;
   });
   flip=new St.PageFlip(host,{
     width:w,height:h,size:'fixed',showCover:true,usePortrait:false,autoSize:false,
-    drawShadow:true,maxShadowOpacity:.34,flippingTime:970,mobileScrollSupport:false,
+    drawShadow:true,maxShadowOpacity:.34,flippingTime:1050,mobileScrollSupport:false,
     showPageCorners:false,disableFlipByClick:true,startPage:0
   });
   flip.loadFromHTML(bookSheets);
@@ -174,7 +174,7 @@ function turnPage(direction){
     if(queuedTurn && active && !transitioning){
       const next=queuedTurn;queuedTurn=0;turnPage(next);
     }
-  },1000);
+  },1250);
 }
 function visibleBookHit(x,y){
   const r=host.getBoundingClientRect();
