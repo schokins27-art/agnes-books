@@ -1,0 +1,12 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Проверка качества страниц</title>
+<style>body{background:#252331;color:#fff;font:15px system-ui;margin:20px}select,button{font:inherit;padding:8px}#frame{margin:18px auto;width:min(90vw,720px);aspect-ratio:720/1020;position:relative;background:#eee}#frame img{width:100%;height:100%;display:block;object-fit:fill;image-rendering:auto}small{display:block;max-width:700px;line-height:1.5}</style>
+<h2>Проверка отображения оригинальных страниц</h2><label>Книга: <select id="book"><option value="tommy">Томми</option><option value="maggie">Мэгги</option></select></label>
+<label> Страница: <select id="page"></select></label>
+<div id="frame"><img id="image" alt="Оригинальная страница"></div>
+<small id="info"></small><p>Здесь оригинальный WebP показан без PageFlip, фильтров и CSS-трансформаций. Открой этот файл на GitHub Pages в той же вкладке и при том же размере, что и книгу. Если здесь текст чётче, чем в книге, причина в отрисовке PageFlip или его контейнера, а не в файле.</p>
+<script>
+const book=document.getElementById('book'),page=document.getElementById('page'),img=document.getElementById('image'),info=document.getElementById('info');
+async function load(){const b=book.value;const cfg=await (await fetch('books/'+b+'/book.json')).json();const files=[cfg.cover,...cfg.pages,cfg.back].filter(Boolean);page.replaceChildren(...files.map((f,i)=>{const o=document.createElement('option');o.value=f;o.textContent=(i+1)+'. '+f;return o}));update()}
+function update(){img.src='books/'+book.value+'/'+page.value;img.onload=()=>{const r=img.getBoundingClientRect();info.textContent=`Исходник: ${img.naturalWidth}×${img.naturalHeight}; на экране: ${Math.round(r.width)}×${Math.round(r.height)} CSS px; DPR: ${devicePixelRatio}`}}
+book.onchange=load;page.onchange=update;load();
+</script></html>
