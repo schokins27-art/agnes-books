@@ -130,3 +130,10 @@ body{font-family:Georgia,serif}
   backface-visibility:visible;
 }
 #shelf .spine:hover{filter:brightness(1.07)}
+
+/* v104: pixel-aligned contact without distortion at render time. */
+#shelf .spine[data-book="tommy"]{bottom:50%!important;top:auto!important;height:calc(var(--t-width) * .120)!important;transform:translate(-50%, 1px)!important;}
+#shelf .spine[data-book="maggie"]{top:50%!important;transform:translate(-50%,0)!important;}
+#shelf .spine img{object-fit:contain!important;}
+/* Improve text contrast on downsized pages without scaling the entire viewer. */
+.book-sheet img{image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;}

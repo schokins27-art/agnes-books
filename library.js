@@ -98,7 +98,7 @@ async function createViewer(book){
   });
   flip=new St.PageFlip(host,{
     width:w,height:h,size:'fixed',showCover:true,usePortrait:false,autoSize:false,
-    drawShadow:true,maxShadowOpacity:.34,flippingTime:760,mobileScrollSupport:false,
+    drawShadow:true,maxShadowOpacity:.34,flippingTime:970,mobileScrollSupport:false,
     showPageCorners:false,disableFlipByClick:true,startPage:0
   });
   flip.loadFromHTML(bookSheets);
