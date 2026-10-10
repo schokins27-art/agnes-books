@@ -69,7 +69,8 @@ async function fly(direction,book){
 }
 function clearFlight(){flight.hidden=true;flight.className='';}
 let flip=null, bookSheets=[], bookCount=0, busy=false, unlockTimer=null;
-const host=document.getElementById('flipbook');
+let host=document.getElementById('flipbook');
+const viewer=document.getElementById('viewer');
 const error=document.getElementById('error');
 async function createViewer(book){
   if(!window.St?.PageFlip)throw Error('Не загрузилась библиотека перелистывания PageFlip.');
@@ -104,14 +105,27 @@ async function createViewer(book){
   bookCount=urls.length;
 }
 function clearViewer(){
-  clearTimeout(unlockTimer);busy=false;
+  clearTimeout(unlockTimer);unlockTimer=null;busy=false;
+  // PageFlip.destroy() changes its container DOM. Never reuse that container:
+  // after the first book is closed, a second PageFlip can render into a detached node.
   if(flip){try{flip.destroy();}catch(e){console.warn('PageFlip cleanup:',e);}flip=null;}
-  host.replaceChildren();bookSheets=[];bookCount=0;
+  const fresh=document.createElement('div');
+  fresh.id='flipbook';
+  fresh.setAttribute('aria-label','Интерактивная книга');
+  // Replace all leftover PageFlip wrappers, even if the old host was removed.
+  for(const child of [...viewer.children]){
+    if(child!==error)child.remove();
+  }
+  viewer.insertBefore(fresh,error);
+  host=fresh;
+  bookSheets=[];bookCount=0;
 }
 async function openBook(book){
   if(active||transitioning)return;
   active=book;transitioning=true;playShelfSound();unlockPaperSound();
   shelf.hidden=true;opened.hidden=false;error.hidden=true;
+  // Ensure every opening starts from a pristine viewer after previous destroy.
+  if(!viewer.contains(host))clearViewer();
   const animation=fly('out',book);
   let loaded=false;
   try{await createViewer(book);loaded=true;}
