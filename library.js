@@ -47,14 +47,14 @@ document.addEventListener('fullscreenchange',()=>{
 
 
 const DURATION=690;
-// Each movement has its own short, realistic recording. The old shelf
-// sound now plays ONLY while turning the final spread onto the rear cover.
+// Dedicated shelf movement, front cover, rear cover, and paper sounds.
 const pullOutSound=new Audio('sounds/book-pull-out.mp3?v=1');
 const putBackSound=new Audio('sounds/book-put-back.mp3?v=1');
 const rearCoverSound=new Audio('sounds/book-closing.mp3?v=30');
+const frontCoverSound=new Audio('sounds/book-cover-open.mp3?v=1');
 const paperSound=new Audio('sounds/page-turn.mp3?v=71');
 paperSound.preload='auto';paperSound.volume=.8;
-for(const sound of [pullOutSound,putBackSound,rearCoverSound]){
+for(const sound of [pullOutSound,putBackSound,rearCoverSound,frontCoverSound]){
   sound.preload='auto';sound.volume=0.7;
 }
 function playBookSound(sound){
@@ -219,8 +219,10 @@ function turnPage(direction){
   busy=true;queuedTurn=0;
   // In showCover mode, the final open spread begins at bookCount-3.
   // The forward flip here turns the REAR COVER, not an ordinary paper page.
+  const opensFrontCover=direction>0 && i===0;
   const closesRearCover=direction>0 && i>=bookCount-3;
-  if(closesRearCover)playBookSound(rearCoverSound);
+  if(opensFrontCover)playBookSound(frontCoverSound);
+  else if(closesRearCover)playBookSound(rearCoverSound);
   else playPaperSound();
   try{
     if(direction>0)flip.flipNext('bottom');else flip.flipPrev('bottom');
