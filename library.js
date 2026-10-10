@@ -1,5 +1,8 @@
 /* Add books here later: each book has its own spine image, cover and viewer config. */
-const BOOKS=[{id:'tommy',title:'Book of Tommy',image:'assets/book-of-tommy-spine.webp',cover:'books/tommy/cover.webp',config:'books/tommy/book.json'}];
+const BOOKS=[
+ {id:'maggie',title:'Book of Maggie',image:'assets/maggie-spine.webp',cover:'books/maggie/cover.webp',config:'books/maggie/book.json'},
+ {id:'tommy',title:'Book of Tommy',image:'assets/tommy-spine.webp',cover:'books/tommy/cover.webp',config:'books/tommy/book.json'}
+];
 const library=document.getElementById('library');
 const shelf=document.getElementById('shelf');
 const opened=document.getElementById('opened');
@@ -9,6 +12,7 @@ const flightSpine=document.getElementById('flight-spine');
 const flightCover=document.getElementById('flight-cover');
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let active=null,transitioning=false,readyResolve=null;
+let viewerSession=0;
 const DURATION=690;
 // The former cover-open/close recording now belongs to shelf pickup/put-away.
 const shelfSound=new Audio('sounds/book-closing.mp3?v=30');
@@ -75,15 +79,22 @@ async function openBook(book){
   const ready=new Promise(resolve=>{
     readyResolve=()=>{if(!didResolve){didResolve=true;resolve();}};
   });
-  frame.src='viewer.html?book='+encodeURIComponent(book.config);
+  frame.src='viewer.html?book='+encodeURIComponent(book.config)+'&v=77&session='+(++viewerSession);
   frame.onerror=()=>console.error('Не удалось загрузить просмотрщик книги');
   // Flight and loading happen at the same time, not one after another.
   const animation=fly('out',book);
-  // Never leave the user stuck behind the animated cover if the embedded
-  // viewer is slow or fails to send its readiness event.
+  // Wait for actual PageFlip initialization; a fixed 400 ms wait could
+  // expose a blank iframe and accumulate broken sessions.
+  const loaded=await Promise.race([ready.then(()=>true),delay(8000).then(()=>false)]);
   await animation;
-  await Promise.race([ready,delay(400)]);
   readyResolve=null;
+  if(!loaded){
+    console.error('Book viewer did not initialize in time');
+    clearFlight();library.classList.remove('is-open');
+    frame.removeAttribute('src');opened.hidden=true;shelf.hidden=false;
+    active=null;transitioning=false;
+    return;
+  }
   library.classList.add('is-open');
   clearFlight();
   transitioning=false;
@@ -96,7 +107,7 @@ async function closeBook(){
   library.classList.remove('is-open');
   await fly('back',book);
   clearFlight();
-  frame.src='about:blank';
+  frame.removeAttribute('src');
   opened.hidden=true;
   shelf.hidden=false;
   active=null;transitioning=false;
@@ -105,7 +116,37 @@ for(const book of BOOKS){
   const button=document.createElement('button');button.className='spine';button.type='button';
   button.title='Открыть: '+book.title;button.setAttribute('aria-label','Открыть: '+book.title);
   const img=document.createElement('img');img.src=book.image;img.alt=book.title;img.draggable=false;
-  button.append(img);button.addEventListener('click',()=>openBook(book));shelf.append(button);
+  button.append(img);
+  // Pixel-accurate clicks: transparent areas of the upper book do not
+  // steal clicks from the lower book.
+  const hitCanvas=document.createElement('canvas');const hitCtx=hitCanvas.getContext('2d',{willReadFrequently:true});
+  img.addEventListener('load',()=>{hitCanvas.width=img.naturalWidth;hitCanvas.height=img.naturalHeight;hitCtx.drawImage(img,0,0);});
+  button.addEventListener('pointerdown',e=>{
+    if(e.button!==0)return;
+    const rect=img.getBoundingClientRect();
+    const x=Math.floor((e.clientX-rect.left)/rect.width*hitCanvas.width);
+    const y=Math.floor((e.clientY-rect.top)/rect.height*hitCanvas.height);
+    if(!hitCanvas.width||!hitCanvas.height||x<0||y<0||x>=hitCanvas.width||y>=hitCanvas.height)return;
+    const alpha=hitCtx.getImageData(x,y,1,1).data[3];
+    if(alpha<35){
+      // Find a visible lower book at this same point, if any.
+      const buttons=[...shelf.querySelectorAll('.spine')];
+      for(const other of buttons.reverse()){
+        if(other===button)continue;
+        const otherImg=other.querySelector('img');const r=otherImg.getBoundingClientRect();
+        if(e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom){
+          const otherCanvas=other._hitCanvas;
+          if(otherCanvas?.width){const px=Math.floor((e.clientX-r.left)/r.width*otherCanvas.width),py=Math.floor((e.clientY-r.top)/r.height*otherCanvas.height);
+            if(px>=0&&py>=0&&px<otherCanvas.width&&py<otherCanvas.height&&other._hitCtx.getImageData(px,py,1,1).data[3]>=35){e.preventDefault();openBook(BOOKS.find(b=>b.id===other.dataset.book));return;}
+          }
+        }
+      }
+      return;
+    }
+    e.preventDefault();openBook(book);
+  });
+  button.dataset.book=book.id;button._hitCanvas=hitCanvas;button._hitCtx=hitCtx;
+  shelf.append(button);
   preload(book.cover);
 }
 window.addEventListener('message',event=>{
