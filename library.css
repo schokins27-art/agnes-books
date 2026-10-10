@@ -105,3 +105,10 @@ body{font-family:Georgia,serif}
 #shelf .spine[data-book="tommy"]{
   bottom:calc(50% - 15px)!important;
 }
+
+/* Book of Tommy: lower by 14px; keeps both original clickable buttons. */
+#shelf .spine[data-book="tommy"] {
+  transform: translate(-50%, calc(-97% + 14px));
+  z-index: 2;
+}
+#shelf .spine[data-book="maggie"] { z-index: 1; }
