@@ -3,12 +3,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
 body{font-family:Georgia,serif}
 [hidden]{display:none!important}
 #library{position:relative;width:100%;height:100%;overflow:hidden;background:transparent;perspective:1400px}
-#shelf{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;perspective:1100px}
-/* Books on the shelf are about half their former display size. */
-.spine{border:0;background:transparent;padding:0;cursor:pointer;display:block;width:min(47vw,calc(45vh * 2.5));max-height:45vh;line-height:0;transform:translate3d(0,0,0);transform-origin:50% 65%;transition:filter 220ms ease,transform 280ms cubic-bezier(.18,.8,.24,1);will-change:transform}
-.spine img{display:block;width:100%;height:auto;max-height:45vh;object-fit:contain;user-select:none;-webkit-user-drag:none}
-.spine:hover{filter:brightness(1.13) drop-shadow(0 12px 12px rgba(0,0,0,.32));transform:translate3d(0,-12px,42px) scale(1.07)}
-.spine:focus-visible{outline:2px solid #d6b87e;outline-offset:4px;transform:translate3d(0,-12px,42px) scale(1.07)}
+
 #opened{position:absolute;inset:0;opacity:0;pointer-events:none;background:transparent}
 #book-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
 #library.is-open #opened{opacity:1;pointer-events:auto}
@@ -69,18 +64,38 @@ body{font-family:Georgia,serif}
 
 
 
-/* Two tightly stacked books. Images have been trimmed to their visible pixels. */
-#shelf{display:block;isolation:isolate;--m-width:min(73vw,calc(68vh * 3.3));--t-width:min(63vw,calc(59vh * 3.3));}
-.spine{position:absolute;left:50%;top:50%;max-height:none;transform-origin:center center;transition:filter 180ms ease;}
-.spine img{width:100%;height:100%;max-height:none;object-fit:fill}
-/* Maggie is deliberately thicker, despite the original narrow illustration. */
-.spine[data-book="maggie"]{z-index:1;width:var(--m-width);height:calc(var(--m-width) * .165);transform:translate(-50%,0);}
-/* Tommy's lower leather edge overlaps Maggie's top edge by a few pixels. */
-.spine[data-book="tommy"]{z-index:2;width:var(--t-width);height:calc(var(--t-width) * .283);transform:translate(-50%,-97%);}
-.spine[data-book="maggie"]:hover,.spine[data-book="tommy"]:hover{filter:brightness(1.10) drop-shadow(0 5px 5px #0004);}
-.spine:focus-visible{outline:2px solid #d6b87e}
 
-/* Single-window viewer: no nested iframe or click-forwarding overlay. */
+/* One responsive, image-bound spine stack. No absolute offsets, fixed heights,
+   scale transforms, hover filters or transparent letterbox areas. */
+#shelf{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;gap:0;
+  isolation:isolate;perspective:none;
+  --m-width:min(73vw,calc(68vh * 3.3));
+  --t-width:min(63vw,calc(59vh * 3.3));
+}
+.spine{
+  position:relative;display:block;flex:0 0 auto;line-height:0;
+  padding:0;margin:0;border:0;background:transparent;cursor:pointer;
+  max-width:none;max-height:none;height:auto;
+  transform:none;filter:none;transition:none;will-change:auto;
+  -webkit-tap-highlight-color:transparent;
+}
+.spine[data-book="tommy"]{order:0;width:var(--t-width);z-index:2}
+/* Compensate only for real alpha padding: Tommy bottom ~6/2155,
+   Maggie top ~9/2077. Both terms scale with their own rendered widths. */
+.spine[data-book="maggie"]{
+  order:1;width:var(--m-width);z-index:1;
+  margin-top:calc(-1 * (var(--t-width) * .0028 + var(--m-width) * .0043));
+}
+.spine img{
+  display:block;width:100%;height:auto;max-height:none;
+  object-fit:contain;image-rendering:auto;
+  filter:none;transform:none;user-select:none;-webkit-user-drag:none;
+}
+.spine:hover,.spine:active,.spine:focus{transform:none;filter:none}
+.spine:focus-visible{outline:2px solid #d6b87e;outline-offset:2px}
+/* Visible alpha edges, not file rectangles, are aligned proportionally. */
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important}
 body{font-family:Georgia,serif}
@@ -89,7 +104,7 @@ body{font-family:Georgia,serif}
 .book-sheet img{width:100%;height:100%;object-fit:fill;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
 .book-cover{background:#10253a}
 /* StPageFlip applies hard-page transforms for data-density=hard. */
-.book-cover img{backface-visibility:hidden}
+.book-cover img{backface-visibility:visible}
 #error{position:absolute;z-index:100;max-width:80%;background:#fff2db;color:#4b291b;padding:14px;border-radius:8px;font:15px/1.5 sans-serif;text-align:center}
 
 /* Cover art already includes the complete binding. Never paint fake edges. */
@@ -107,86 +122,3 @@ body{font-family:Georgia,serif}
 #opened{z-index:2}
 #viewer{position:absolute;inset:0}
 #flipbook{touch-action:manipulation}
-
-/* v101: preserve original slender Tommy spine and touch the Maggie spine. */
-#shelf .spine[data-book="tommy"]{
-  height:calc(var(--t-width) * .120) !important;
-  bottom:calc(50% - 2px) !important;
-  top:auto !important;
-  transform:translateX(-50%) !important;
-}
-#shelf .spine[data-book="maggie"]{
-  top:50% !important;
-  transform:translateX(-50%) !important;
-}
-
-/* v103: preserve WebP proportions and avoid GPU raster caching of shelf images. */
-#shelf .spine{will-change:auto!important;filter:none;backface-visibility:visible}
-#shelf .spine img{
-  object-fit:contain!important;
-  image-rendering:auto!important;
-  transform:none!important;
-  filter:none!important;
-  backface-visibility:visible;
-}
-#shelf .spine:hover{filter:brightness(1.07)}
-
-/* v104: pixel-aligned contact without distortion at render time. */
-#shelf .spine[data-book="tommy"]{bottom:50%!important;top:auto!important;height:calc(var(--t-width) * .120)!important;transform:translate(-50%, 1px)!important;}
-#shelf .spine[data-book="maggie"]{top:50%!important;transform:translate(-50%,0)!important;}
-#shelf .spine img{object-fit:contain!important;}
-/* Improve text contrast on downsized pages without scaling the entire viewer. */
-.book-sheet img{image-rendering:auto!important;}
-
-/* v105: Keep the opened book within its embed, with smooth source sampling. */
-#viewer{overflow:hidden!important}
-.book-sheet img{image-rendering:auto!important}
-
-/* v106: Align actual rendered spine edges, not empty fixed-height boxes. */
-#shelf .spine[data-book="tommy"],
-#shelf .spine[data-book="maggie"] {
-  height:auto!important;
-  max-height:none!important;
-  min-height:0!important;
-}
-#shelf .spine[data-book="tommy"] {
-  top:auto!important;
-  bottom:50%!important;
-  transform:translateX(-50%)!important;
-}
-#shelf .spine[data-book="maggie"] {
-  top:50%!important;
-  bottom:auto!important;
-  transform:translateX(-50%)!important;
-}
-#shelf .spine img {
-  display:block!important;
-  width:100%!important;
-  height:auto!important;
-  max-height:none!important;
-  object-fit:contain!important;
-  image-rendering:auto!important;
-}
-/* Smooth interpolation for page photographs and lettering. */
-.book-sheet img {image-rendering:auto!important;filter:none!important;}
-
-/* v107: visible spine contact and stable hover rasterization. */
-#shelf .spine[data-book="tommy"] {
-  bottom:calc(50% - 8px)!important;
-  transform:translateX(-50%)!important;
-}
-#shelf .spine,
-#shelf .spine:hover,
-#shelf .spine:focus-visible {
-  filter:none!important;
-  transition:none!important;
-  will-change:auto!important;
-}
-#shelf .spine:hover,
-#shelf .spine:focus-visible {
-  transform:translateX(-50%)!important;
-}
-#shelf .spine[data-book="tommy"]:hover,
-#shelf .spine[data-book="tommy"]:focus-visible {
-  transform:translateX(-50%)!important;
-}
